@@ -10,6 +10,11 @@ import CreateProjectDialog from '@/components/features/projects/create-project-d
 
 export default function ProjectsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleProjectCreated = () => {
+    setRefreshKey((prev) => prev + 1)
+  }
 
   return (
     <div className="space-y-6 p-6">
@@ -24,9 +29,13 @@ export default function ProjectsPage() {
         </Button>
       </div>
 
-      <ProjectList />
+      <ProjectList refreshKey={refreshKey} />
 
-      <CreateProjectDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <CreateProjectDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onProjectCreated={handleProjectCreated}
+      />
     </div>
   )
 }
