@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useAppStore } from '@/lib/store'
 import { Loader2 } from 'lucide-react'
@@ -296,7 +297,7 @@ export default function LoginPage() {
                     <div className="my-5 border-t border-gray-100" />
                     <p className="text-xs text-gray-500 text-center">
                         Don&apos;t have an account?{' '}
-                        <Link href="/admin/signup" className="font-medium text-black hover:text-gray-800 hover:underline">
+                        <Link href="/signup" className="font-medium text-black hover:text-gray-800 hover:underline">
                             Sign up here
                         </Link>
                     </p>

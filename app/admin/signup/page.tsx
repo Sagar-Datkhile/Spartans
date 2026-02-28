@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { createClient } from '@/lib/supabase/client'
 import { useAppStore } from '@/lib/store'
 import { Loader2, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react'
 
@@ -50,40 +49,58 @@ export default function AdminSignupPage() {
         if (!passwordsMatch) { setError('Passwords do not match.'); return }
         setLoading(true)
 
-        if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-            setCurrentUser({
-                id: `superadmin-${Date.now()}`,
-                email, name, role: 'SUPERADMIN',
-                companyId: companyName.toLowerCase().replace(/\s+/g, '-'),
-                createdAt: new Date(), updatedAt: new Date(),
-            })
-            router.push('/dashboard')
-            return
-        }
-
         try {
-            const credential = await createUserWithEmailAndPassword(auth, email, password)
-            await updateProfile(credential.user, { displayName: name })
-            const companyId = companyName.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now()
-            await fetch('/api/users/invite', {
+            const res = await fetch('/api/auth/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, name, role: 'SUPERADMIN', companyId, createdBy: 'self-signup' }),
-            }).catch(() => null)
-            setCurrentUser({
-                id: credential.user.uid,
-                email, name, role: 'SUPERADMIN', companyId,
-                createdAt: new Date(), updatedAt: new Date(),
+                body: JSON.stringify({ name, email, companyName, password })
             })
-            router.push('/dashboard')
-        } catch (err: any) {
-            if (err.code === 'auth/email-already-in-use') {
-                setError('An account with this email already exists. Try signing in.')
-            } else if (err.code === 'auth/invalid-email') {
-                setError('Invalid email address.')
-            } else {
-                setError(err.message || 'Failed to create account. Please try again.')
+
+            const data = await res.json()
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Signup failed')
             }
+
+            // Immediately login the user after successful signup
+            const supabase = createClient()
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            })
+
+            if (authError || !authData.user) {
+                throw new Error('Signup successful, but failed to automatically log in.')
+            }
+
+            // Fetch profile data to load globally
+            const { data: profile, error: profileError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', authData.user.id)
+                .single()
+
+            if (profileError || !profile) {
+                await supabase.auth.signOut()
+                throw new Error('Account profile not found after signup.')
+            }
+
+            setCurrentUser({
+                id: authData.user.id,
+                email: profile.email,
+                name: profile.name,
+                role: profile.role,
+                avatar: profile.avatar_url,
+                companyId: profile.company_id,
+                departmentId: profile.department_id,
+                createdAt: new Date(profile.created_at),
+                updatedAt: new Date(profile.updated_at),
+            })
+
+            router.push('/dashboard/superadmin')
+        } catch (err: any) {
+            console.error('Signup error:', err)
+            setError(err.message || 'Failed to create account. Please try again.')
         } finally {
             setLoading(false)
         }
@@ -234,10 +251,10 @@ export default function AdminSignupPage() {
                                     placeholder="Repeat your password"
                                     required
                                     className={`w-full border bg-white text-gray-900 placeholder:text-gray-300 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:ring-1 transition ${confirmPassword
-                                            ? passwordsMatch
-                                                ? 'border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500'
-                                                : 'border-red-300 focus:border-red-400 focus:ring-red-400'
-                                            : 'border-gray-200 focus:border-gray-900 focus:ring-gray-900'
+                                        ? passwordsMatch
+                                            ? 'border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500'
+                                            : 'border-red-300 focus:border-red-400 focus:ring-red-400'
+                                        : 'border-gray-200 focus:border-gray-900 focus:ring-gray-900'
                                         }`}
                                 />
                                 <button type="button" onClick={() => setShowConfirm(!showConfirm)}
