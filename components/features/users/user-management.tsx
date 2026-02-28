@@ -51,16 +51,18 @@ export default function UserManagement() {
           <Users className="h-4 w-4" />
           <span>{loading ? '...' : users.length} user{users.length !== 1 ? 's' : ''}</span>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            Bulk Import CSV
-          </Button>
-          <Button size="sm" onClick={() => setInviteOpen(true)}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Invite User
-          </Button>
-        </div>
+        {currentUser?.role !== 'EMPLOYEE' && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Bulk Import CSV
+            </Button>
+            <Button size="sm" onClick={() => setInviteOpen(true)}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Invite User
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Loading */}

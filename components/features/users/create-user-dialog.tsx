@@ -8,23 +8,46 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Copy, Check, Eye, EyeOff, RefreshCw, Mail } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAppStore } from '@/lib/store'
+import { useEffect, useMemo } from 'react'
 
 interface CreateUserDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
-export default function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
+export default function CreateUserDialog({ open, onOpenChange, onSuccess }: CreateUserDialogProps) {
+  const { currentUser } = useAppStore()
+
+  // Memoize available roles so they only change when the current user's role changes
+  const availableRoles = useMemo(() => {
+    if (currentUser?.role === 'SUPERADMIN') {
+      return [{ value: 'MANAGER', label: 'Manager' }]
+    }
+    if (currentUser?.role === 'MANAGER') {
+      return [{ value: 'EMPLOYEE', label: 'Employee' }]
+    }
+    return []
+  }, [currentUser?.role])
+
   const [formData, setFormData] = useState({
     name: '',
     emailPrefix: '',
     department: '',
-    role: 'employee',
+    role: '',
     password: '',
     phone: '',
   })
   const [showPassword, setShowPassword] = useState(false)
   const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null)
+
+  // Update role if availableRoles changes and the current role is no longer valid
+  useEffect(() => {
+    if (availableRoles.length > 0 && formData.role !== availableRoles[0].value) {
+      setFormData(prev => ({ ...prev, role: availableRoles[0].value }))
+    }
+  }, [availableRoles, formData.role])
 
   const corporateDomain = '@spartans.com'
 
@@ -51,6 +74,7 @@ export default function CreateUserDialog({ open, onOpenChange }: CreateUserDialo
       password: formData.password,
     })
     toast.success('User created successfully')
+    onSuccess?.()
   }
 
   const copyToClipboard = (text: string, label: string) => {
@@ -64,7 +88,7 @@ export default function CreateUserDialog({ open, onOpenChange }: CreateUserDialo
       name: '',
       emailPrefix: '',
       department: '',
-      role: 'employee',
+      role: availableRoles[0]?.value || 'EMPLOYEE',
       password: '',
       phone: '',
     })
@@ -214,14 +238,22 @@ export default function CreateUserDialog({ open, onOpenChange }: CreateUserDialo
 
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select defaultValue="employee" onValueChange={(v) => setFormData({ ...formData, role: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
+              <Select
+                value={formData.role}
+                onValueChange={(v) => setFormData({ ...formData, role: v })}
+                disabled={availableRoles.length <= 1}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {availableRoles.find(r => r.value === formData.role)?.label || 'Select role'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="superadmin">SuperAdmin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="employee">Employee</SelectItem>
+                  {availableRoles.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>
+                      {r.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
