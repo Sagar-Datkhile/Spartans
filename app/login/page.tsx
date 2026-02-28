@@ -55,17 +55,14 @@ export default function LoginPage() {
                 throw new Error('No user returned after successful auth.')
             }
 
-            // Fetch profile data to get role
-            const { data: profile, error: profileError } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', authData.user.id)
-                .single()
-
-            if (profileError || !profile) {
+            // Fetch profile data via our server route to bypass RLS
+            const profileRes = await fetch('/api/users/me');
+            if (!profileRes.ok) {
                 await supabase.auth.signOut()
                 throw new Error('Account profile not found. Contact your administrator.')
             }
+
+            const { profile } = await profileRes.json();
 
             setCurrentUser({
                 id: authData.user.id,

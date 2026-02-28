@@ -36,18 +36,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       // If already correctly loaded, skip
       if (currentStoreUser?.id === session.user.id) return
 
-      // Load profile to get role
-      const { data: profile, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
-
-      if (error || !profile) {
+      // Load profile to get role via server-side API to bypass RLS limits
+      const profileRes = await fetch('/api/users/me')
+      if (!profileRes.ok) {
         await supabase.auth.signOut()
         router.replace('/login')
         return
       }
+
+      const { profile } = await profileRes.json()
 
       const path = window.location.pathname
       if (path.startsWith('/dashboard/superadmin') && profile.role !== 'SUPERADMIN') {
