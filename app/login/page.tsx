@@ -8,6 +8,30 @@ import { getUser } from '@/lib/services/firestore'
 import { useAppStore } from '@/lib/store'
 import { Loader2 } from 'lucide-react'
 
+const TRY_AS_ROLES = [
+    {
+        role: 'SUPERADMIN' as const,
+        label: 'Super Admin',
+        dot: 'bg-red-500',
+        name: 'Demo Admin',
+        email: 'admin@spartans.demo',
+    },
+    {
+        role: 'MANAGER' as const,
+        label: 'Manager',
+        dot: 'bg-blue-500',
+        name: 'Demo Manager',
+        email: 'manager@spartans.demo',
+    },
+    {
+        role: 'EMPLOYEE' as const,
+        label: 'Employee',
+        dot: 'bg-green-500',
+        name: 'Demo Employee',
+        email: 'employee@spartans.demo',
+    },
+]
+
 export default function LoginPage() {
     const router = useRouter()
     const { setCurrentUser } = useAppStore()
@@ -17,12 +41,28 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+    const [tryingAs, setTryingAs] = useState<string | null>(null)
 
     const roles = [
         { value: 'SUPERADMIN', label: 'Super Admin', dot: 'bg-red-500' },
         { value: 'MANAGER', label: 'Manager', dot: 'bg-blue-500' },
         { value: 'EMPLOYEE', label: 'Employee', dot: 'bg-green-500' },
     ]
+
+    // Directly enter the dashboard as a demo role — no auth required
+    const handleTryAs = (demo: typeof TRY_AS_ROLES[0]) => {
+        setTryingAs(demo.role)
+        setCurrentUser({
+            id: `demo-${demo.role.toLowerCase()}`,
+            email: demo.email,
+            name: demo.name,
+            role: demo.role,
+            companyId: 'demo-company',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        })
+        router.push('/dashboard')
+    }
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -36,7 +76,6 @@ export default function LoginPage() {
             if (!profile) {
                 setError('Account profile not found. Contact your administrator.')
                 await auth.signOut()
-                setLoading(false)
                 return
             }
 
@@ -79,7 +118,7 @@ export default function LoginPage() {
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
             <div className="w-full max-w-sm">
 
-                {/* Logo / Brand — matches sidebar "D Dashboard" style */}
+                {/* Brand */}
                 <div className="flex items-center gap-3 mb-8 justify-center">
                     <div className="h-10 w-10 rounded-lg bg-black flex items-center justify-center">
                         <span className="text-white font-bold text-lg">S</span>
@@ -90,11 +129,49 @@ export default function LoginPage() {
                     </div>
                 </div>
 
-                {/* Login Card — matches the white cards in the app */}
+                {/* Card */}
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
                     <h1 className="text-2xl font-bold text-gray-900 mb-1">Sign in</h1>
                     <p className="text-sm text-gray-500 mb-6">Enter your credentials to access your dashboard.</p>
 
+                    {/* ── Try As Role ── */}
+                    <div className="mb-6 space-y-2">
+                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                            Explore the app as
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                            {TRY_AS_ROLES.map((demo) => (
+                                <button
+                                    key={demo.role}
+                                    type="button"
+                                    disabled={tryingAs !== null}
+                                    onClick={() => handleTryAs(demo)}
+                                    className="relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg border border-gray-200 bg-gray-50 hover:bg-white hover:border-gray-400 hover:shadow-sm transition text-center group disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {tryingAs === demo.role ? (
+                                        <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+                                    ) : (
+                                        <span className={`h-2.5 w-2.5 rounded-full ${demo.dot}`} />
+                                    )}
+                                    <span className="text-xs font-medium text-gray-700 group-hover:text-gray-900 leading-tight">
+                                        {demo.label}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* OR divider */}
+                    <div className="relative mb-5">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-100" />
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                            <span className="bg-white px-2 text-gray-400">or sign in with your account</span>
+                        </div>
+                    </div>
+
+                    {/* Login Form */}
                     <form onSubmit={handleLogin} className="space-y-4">
                         {/* Role */}
                         <div>
@@ -114,20 +191,18 @@ export default function LoginPage() {
                                         <option key={r.value} value={r.value}>{r.label}</option>
                                     ))}
                                 </select>
-                                {/* Chevron icon */}
                                 <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                                     <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                         <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
                                     </svg>
                                 </div>
                             </div>
-                            {/* Colored role badge preview */}
                             {role && (() => {
-                                const selected = roles.find(r => r.value === role)
-                                return selected ? (
+                                const sel = roles.find(r => r.value === role)
+                                return sel ? (
                                     <div className="mt-2 flex items-center gap-1.5">
-                                        <span className={`h-2 w-2 rounded-full ${selected.dot}`} />
-                                        <span className="text-xs text-gray-500">Signing in as <span className="font-medium text-gray-800">{selected.label}</span></span>
+                                        <span className={`h-2 w-2 rounded-full ${sel.dot}`} />
+                                        <span className="text-xs text-gray-500">Signing in as <span className="font-medium text-gray-800">{sel.label}</span></span>
                                     </div>
                                 ) : null
                             })()}
@@ -152,9 +227,7 @@ export default function LoginPage() {
                         {/* Password */}
                         <div>
                             <div className="flex items-center justify-between mb-1.5">
-                                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                    Password
-                                </label>
+                                <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
@@ -174,40 +247,30 @@ export default function LoginPage() {
                             />
                         </div>
 
-                        {/* Error */}
                         {error && (
                             <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3">
                                 <p className="text-sm text-red-600">{error}</p>
                             </div>
                         )}
 
-                        {/* Submit — matches the black "+ New User" button */}
                         <button
                             type="submit"
                             disabled={loading}
                             className="w-full flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white text-sm font-medium py-2.5 rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed mt-2"
                         >
                             {loading ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Signing in...
-                                </>
-                            ) : (
-                                'Sign In'
-                            )}
+                                <><Loader2 className="h-4 w-4 animate-spin" />Signing in...</>
+                            ) : 'Sign In'}
                         </button>
                     </form>
 
-                    {/* Divider */}
                     <div className="my-5 border-t border-gray-100" />
-
                     <p className="text-xs text-gray-500 text-center">
                         Don&apos;t have an account?{' '}
                         <span className="font-medium text-gray-700">Contact your administrator for an invite.</span>
                     </p>
                 </div>
 
-                {/* Footer */}
                 <p className="text-center text-xs text-gray-400 mt-6">
                     © 2025 Spartans Platform · All rights reserved
                 </p>
