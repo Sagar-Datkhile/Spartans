@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { getUser } from '@/lib/services/firestore'
@@ -283,7 +284,9 @@ export default function LoginPage() {
                     <div className="my-5 border-t border-gray-100" />
                     <p className="text-xs text-gray-500 text-center">
                         Don&apos;t have an account?{' '}
-                        <span className="font-medium text-gray-700">Contact your administrator for an invite.</span>
+                        <Link href="/admin/signup" className="font-medium text-black hover:text-gray-800 hover:underline">
+                            Sign up here
+                        </Link>
                     </p>
                 </div>
 
