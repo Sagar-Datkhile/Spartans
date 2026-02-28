@@ -15,6 +15,7 @@ export interface User {
   role: UserRole
   avatar?: string
   companyId?: string
+  companyName?: string
   departmentId?: string
   status?: EmployeeStatus | null
   skills?: string[]

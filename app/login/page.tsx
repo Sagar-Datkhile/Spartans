@@ -74,6 +74,7 @@ export default function LoginPage() {
                 role: profile.role,
                 avatar: profile.avatar_url,
                 companyId: profile.company_id,
+                companyName: profile.company_name,
                 departmentId: profile.department_id,
                 createdAt: new Date(profile.created_at),
                 updatedAt: new Date(profile.updated_at),
