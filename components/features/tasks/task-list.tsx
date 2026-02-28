@@ -42,68 +42,87 @@ const mockTasks = [
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'TODO':
-      return 'bg-gray-500'
+      return 'text-slate-600 bg-slate-100'
     case 'IN_PROGRESS':
-      return 'bg-blue-500'
+      return 'text-blue-600 bg-blue-100'
     case 'IN_REVIEW':
-      return 'bg-yellow-500'
+      return 'text-amber-600 bg-amber-100'
     case 'COMPLETED':
-      return 'bg-green-500'
+      return 'text-emerald-600 bg-emerald-100'
     default:
-      return 'bg-gray-500'
+      return 'text-slate-600 bg-slate-100'
   }
 }
 
 const getPriorityColor = (priority: string) => {
   switch (priority) {
     case 'LOW':
-      return 'bg-green-100 text-green-800'
+      return 'text-emerald-700 bg-emerald-50 border-emerald-100'
     case 'MEDIUM':
-      return 'bg-yellow-100 text-yellow-800'
+      return 'text-amber-700 bg-amber-50 border-amber-100'
     case 'HIGH':
-      return 'bg-red-100 text-red-800'
+      return 'text-rose-700 bg-rose-50 border-rose-100'
     default:
-      return 'bg-gray-100 text-gray-800'
+      return 'text-slate-700 bg-slate-50 border-slate-100'
   }
 }
 
 export default function TaskList() {
   return (
-    <div className="space-y-3">
+    <div className="grid gap-4">
       {mockTasks.map((task) => (
-        <Card key={task.id} className="flex items-center gap-4 p-4">
-          <Checkbox defaultChecked={task.completed} />
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className={`font-semibold ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
-                {task.title}
-              </h3>
-              <Badge className={getStatusColor(task.status)}>
+        <Card key={task.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 transition-all hover:border-gray-400 hover:shadow-md">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <Checkbox
+              defaultChecked={task.completed}
+              className="h-5 w-5 rounded-md"
+            />
+            <div className="sm:hidden flex items-center gap-2">
+              <Badge variant="secondary" className={`${getStatusColor(task.status)} border-none shadow-none`}>
+                <span className={`h-1.5 w-1.5 rounded-full mr-1.5 ${task.status === 'COMPLETED' ? 'bg-emerald-500' : task.status === 'IN_PROGRESS' ? 'bg-blue-500' : 'bg-slate-400'}`} />
                 {task.status.replace('_', ' ')}
               </Badge>
-              <Badge className={getPriorityColor(task.priority)}>
-                {task.priority}
-              </Badge>
+            </div>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-y-1 lg:gap-3">
+              <h3 className={`font-semibold text-lg truncate ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
+                {task.title}
+              </h3>
+              <div className="hidden sm:flex items-center gap-2">
+                <Badge variant="secondary" className={`${getStatusColor(task.status)} text-[11px] font-semibold px-2 py-0.5 border-none shadow-none`}>
+                  {task.status.replace('_', ' ')}
+                </Badge>
+                <Badge variant="outline" className={`${getPriorityColor(task.priority)} text-[10px] font-bold uppercase tracking-wider`}>
+                  {task.priority}
+                </Badge>
+              </div>
             </div>
 
-            <p className="text-sm text-muted-foreground mt-1">{task.project}</p>
-
-            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5 bg-muted/50 px-2 py-0.5 rounded-md">
+                <span className="font-medium text-primary">Project:</span> {task.project}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-primary/70" />
                 <span>{task.dueDate}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <User className="h-4 w-4" />
+              <div className="flex items-center gap-1.5">
+                <User className="h-4 w-4 text-primary/70" />
                 <span>{task.assignee}</span>
               </div>
             </div>
           </div>
 
-          <Button variant="ghost" size="sm">
-            View
-          </Button>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex">
+              Details
+            </Button>
+            <Button size="sm" className="w-full sm:w-auto">
+              View
+            </Button>
+          </div>
         </Card>
       ))}
     </div>
