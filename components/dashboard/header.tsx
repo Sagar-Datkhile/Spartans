@@ -43,7 +43,7 @@ export default function Header() {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'SUPERADMIN':
-        return 'bg-red-500'
+        return 'bg-black'
       case 'MANAGER':
         return 'bg-blue-500'
       case 'EMPLOYEE':
@@ -54,7 +54,7 @@ export default function Header() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4 shadow-sm">
+    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6 shadow-sm">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
@@ -73,9 +73,11 @@ export default function Header() {
 
 
         <div className="hidden items-center gap-2 sm:flex">
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold text-white ${getRoleColor(currentUser?.role || '')}`}>
-            {currentUser?.role}
-          </span>
+          {currentUser?.role !== 'SUPERADMIN' && (
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold text-white ${getRoleColor(currentUser?.role || '')}`}>
+              {currentUser?.role}
+            </span>
+          )}
         </div>
 
         <DropdownMenu>
