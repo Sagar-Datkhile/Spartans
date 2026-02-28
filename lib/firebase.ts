@@ -12,10 +12,31 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
-const app = initializeApp(firebaseConfig)
+const isConfigured = !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY
 
-export const auth = getAuth(app)
-export const db = getFirestore(app)
-export const storage = getStorage(app)
+// Initialize Firebase only if we have a real API key
+let app: any
+let auth: any
+let db: any
+let storage: any
 
+if (isConfigured) {
+  try {
+    app = initializeApp(firebaseConfig)
+    auth = getAuth(app)
+    db = getFirestore(app)
+    storage = getStorage(app)
+  } catch (error) {
+    console.error("Firebase initialization failed:", error)
+  }
+} else {
+  // Provide harmless mock objects for development
+  console.warn("Firebase not configured. Using development bypass.")
+  app = {}
+  auth = { currentUser: null, onAuthStateChanged: () => () => { } }
+  db = {}
+  storage = {}
+}
+
+export { auth, db, storage }
 export default app
