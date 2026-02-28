@@ -68,21 +68,30 @@ export default function Sidebar() {
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-6">
           {navigationItems.map((item: any) => {
-            const isActive = pathname === item.href
+            // Check if active:
+            // If the item is the main "Dashboard" link, it should be active if we are exactly on /dashboard or its role-specific sub-routes (but NOT things like /dashboard/tasks).
+            // For everything else, if the current URL starts with the item's href, it is active (e.g. /dashboard/tasks/123 -> matches /dashboard/tasks).
+            const isDashboardBase = item.href === '/dashboard'
+            const isActive = isDashboardBase
+              ? pathname === '/dashboard' || pathname === '/dashboard/superadmin' || pathname === '/dashboard/manager' || pathname === '/dashboard/employee'
+              : pathname.startsWith(item.href)
+
             const Icon = getIcon(item.icon)
 
             return (
               <Link key={item.id} href={item.href}>
                 <div
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors mb-1',
                     isActive
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                   )}
                 >
-                  {Icon}
-                  <span>{item.label}</span>
+                  <div className="flex-shrink-0 flex items-center justify-center">
+                    {Icon}
+                  </div>
+                  <span className="truncate flex-1">{item.label}</span>
                 </div>
               </Link>
             )
