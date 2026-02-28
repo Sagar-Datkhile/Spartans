@@ -10,6 +10,8 @@ export type Feature =
   | 'chat'
   | 'user_management'
   | 'settings'
+  | 'team_settings'
+  | 'profile_settings'
   | 'csv_upload'
 
 const rolePermissions: Record<UserRole, Feature[]> = {
@@ -23,6 +25,8 @@ const rolePermissions: Record<UserRole, Feature[]> = {
     'chat',
     'user_management',
     'settings',
+    'team_settings',
+    'profile_settings',
     'csv_upload',
   ],
   MANAGER: [
@@ -33,6 +37,8 @@ const rolePermissions: Record<UserRole, Feature[]> = {
     'assets',
     'analytics',
     'chat',
+    'team_settings',
+    'profile_settings',
     'csv_upload',
   ],
   EMPLOYEE: [
@@ -41,6 +47,7 @@ const rolePermissions: Record<UserRole, Feature[]> = {
     'chat',
     'analytics',
     'gantt',
+    'profile_settings',
   ],
 }
 
@@ -128,7 +135,7 @@ export const getRoleNavigationItems = (role: UserRole) => {
       label: 'Settings',
       icon: 'Settings',
       href: '/dashboard/settings',
-      visible: ['SUPERADMIN'] as UserRole[],
+      visible: ['SUPERADMIN', 'MANAGER', 'EMPLOYEE'] as UserRole[],
     },
   ]
 
