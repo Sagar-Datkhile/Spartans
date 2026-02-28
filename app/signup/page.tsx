@@ -95,8 +95,10 @@ export default function SignupPage() {
                 </div>
 
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-1">Company Setup</h1>
-                    <p className="text-sm text-gray-500 mb-6">Create a SuperAdmin account and register your organization.</p>
+                    <div className="text-center">
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">Register Your Organization</h1>
+                        <p className="text-sm text-gray-500 mb-6">Create an account for your company</p>
+                    </div>
 
                     <form onSubmit={handleSignup} className="space-y-4">
                         <div>

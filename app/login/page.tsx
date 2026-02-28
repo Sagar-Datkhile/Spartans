@@ -7,29 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAppStore } from '@/lib/store'
 import { Loader2 } from 'lucide-react'
 
-const TRY_AS_ROLES = [
-    {
-        role: 'SUPERADMIN' as const,
-        label: 'Super Admin',
-        dot: 'bg-red-500',
-        name: 'Demo Admin',
-        email: 'admin@spartans.demo',
-    },
-    {
-        role: 'MANAGER' as const,
-        label: 'Manager',
-        dot: 'bg-blue-500',
-        name: 'Demo Manager',
-        email: 'manager@spartans.demo',
-    },
-    {
-        role: 'EMPLOYEE' as const,
-        label: 'Employee',
-        dot: 'bg-green-500',
-        name: 'Demo Employee',
-        email: 'employee@spartans.demo',
-    },
-]
+
 
 export default function LoginPage() {
     const router = useRouter()
@@ -40,28 +18,12 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
-    const [tryingAs, setTryingAs] = useState<string | null>(null)
 
     const roles = [
         { value: 'SUPERADMIN', label: 'Super Admin', dot: 'bg-red-500' },
         { value: 'MANAGER', label: 'Manager', dot: 'bg-blue-500' },
         { value: 'EMPLOYEE', label: 'Employee', dot: 'bg-green-500' },
     ]
-
-    // Directly enter the dashboard as a demo role — no auth required
-    const handleTryAs = (demo: typeof TRY_AS_ROLES[0]) => {
-        setTryingAs(demo.role)
-        setCurrentUser({
-            id: `demo-${demo.role.toLowerCase()}`,
-            email: demo.email,
-            name: demo.name,
-            role: demo.role,
-            companyId: 'demo-company',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        })
-        router.push('/dashboard')
-    }
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -161,44 +123,9 @@ export default function LoginPage() {
 
                 {/* Card */}
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-1">Sign in</h1>
-                    <p className="text-sm text-gray-500 mb-6">Enter your credentials to access your dashboard.</p>
-
-                    {/* ── Try As Role ── */}
-                    <div className="mb-6 space-y-2">
-                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-                            Explore the app as
-                        </p>
-                        <div className="grid grid-cols-3 gap-2">
-                            {TRY_AS_ROLES.map((demo) => (
-                                <button
-                                    key={demo.role}
-                                    type="button"
-                                    disabled={tryingAs !== null}
-                                    onClick={() => handleTryAs(demo)}
-                                    className="relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg border border-gray-200 bg-gray-50 hover:bg-white hover:border-gray-400 hover:shadow-sm transition text-center group disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {tryingAs === demo.role ? (
-                                        <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
-                                    ) : (
-                                        <span className={`h-2.5 w-2.5 rounded-full ${demo.dot}`} />
-                                    )}
-                                    <span className="text-xs font-medium text-gray-700 group-hover:text-gray-900 leading-tight">
-                                        {demo.label}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* OR divider */}
-                    <div className="relative mb-5">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-100" />
-                        </div>
-                        <div className="relative flex justify-center text-xs">
-                            <span className="bg-white px-2 text-gray-400">or sign in with your account</span>
-                        </div>
+                    <div className="text-center">
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">Sign in</h1>
+                        <p className="text-sm text-gray-500 mb-6">Enter your credentials to access your dashboard.</p>
                     </div>
 
                     {/* Login Form */}
