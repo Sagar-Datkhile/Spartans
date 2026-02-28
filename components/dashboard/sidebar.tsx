@@ -1,24 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useUIStore, useAppStore } from '@/lib/store'
-import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import * as Icons from 'lucide-react'
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const router = useRouter()
   const { navigationItems, sidebarOpen } = useUIStore()
   const { currentUser } = useAppStore()
-
-  const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    useAppStore.setState({ currentUser: null })
-    router.replace('/login')
-  }
 
   const getIcon = (iconName: string) => {
     const iconMap: Record<string, any> = {
@@ -54,7 +45,7 @@ export default function Sidebar() {
         )}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between border-b border-sidebar-border px-6 py-4">
+        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-6">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-bold uppercase">
               {currentUser?.companyName ? currentUser.companyName.charAt(0) : 'D'}
