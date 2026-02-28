@@ -158,7 +158,7 @@ export function EmployeeTaskModal({
                                             </div>
                                             <div className="flex items-start space-x-2">
                                                 <Checkbox id="chk-man" checked={checklist.managerNotes} onCheckedChange={(c) => setChecklist(prev => ({ ...prev, managerNotes: !!c }))} />
-                                                <label htmlFor="chk-man" className="text-sm leading-none font-medium">Manager notes addressed?</label>
+                                                <label htmlFor="chk-man" className="text-sm leading-none font-medium">Task description read and understood?</label>
                                             </div>
                                             <div className="flex items-start space-x-2">
                                                 <Checkbox id="chk-self" checked={checklist.selfReview} onCheckedChange={(c) => setChecklist(prev => ({ ...prev, selfReview: !!c }))} />
@@ -204,24 +204,32 @@ export function EmployeeTaskModal({
                                     </div>
                                 </section>
 
-                                {/* Manager Notes */}
-                                <Card className="border-blue-100 bg-blue-50/50 shadow-none">
-                                    <div
-                                        className="flex justify-between items-center p-4 cursor-pointer hover:bg-blue-50/80 transition-colors"
-                                        onClick={() => setManagerNotesOpen(!managerNotesOpen)}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <AlertCircle className="w-4 h-4 text-blue-600" />
-                                            <h3 className="font-semibold text-blue-900 text-sm">Manager Notes</h3>
+                                {/* Task Description */}
+                                {/* Task Description */}
+                                <div className="space-y-3 pt-2">
+                                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Task Description</h3>
+                                    <Card className="border-blue-100 bg-blue-50/50 shadow-none overflow-hidden">
+                                        <div
+                                            className="flex justify-between items-center p-4 cursor-pointer hover:bg-blue-50/80 transition-colors border-b border-blue-100/50"
+                                            onClick={() => setManagerNotesOpen(!managerNotesOpen)}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <AlertCircle className="w-4 h-4 text-blue-600" />
+                                                <h3 className="font-semibold text-blue-900 text-sm">{task.title}</h3>
+                                            </div>
+                                            {managerNotesOpen ? <ChevronUp className="w-4 h-4 text-blue-500" /> : <ChevronDown className="w-4 h-4 text-blue-500" />}
                                         </div>
-                                        {managerNotesOpen ? <ChevronUp className="w-4 h-4 text-blue-500" /> : <ChevronDown className="w-4 h-4 text-blue-500" />}
-                                    </div>
-                                    {managerNotesOpen && (
-                                        <div className="px-4 pb-4 pt-1 text-sm text-blue-800">
-                                            Please ensure to follow the brand guidelines while working on this task. Reach out if you need any resources or have questions. Ensure pixel-perfect margins!
-                                        </div>
-                                    )}
-                                </Card>
+                                        {managerNotesOpen && (
+                                            <CardContent className="p-0">
+                                                <ScrollArea className="max-h-[200px] w-full">
+                                                    <div className="p-4 text-sm text-blue-900 leading-relaxed">
+                                                        {task.description || "Please ensure to follow the brand guidelines while working on this task. Reach out if you need any resources or have questions. Ensure pixel-perfect margins!"}
+                                                    </div>
+                                                </ScrollArea>
+                                            </CardContent>
+                                        )}
+                                    </Card>
+                                </div>
 
                                 {/* My Work Update */}
                                 <section className="bg-white border rounded-lg p-5 shadow-sm space-y-6">

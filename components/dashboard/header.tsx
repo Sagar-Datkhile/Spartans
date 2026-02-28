@@ -11,10 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import SetStatusDialog from '@/components/features/users/set-status-dialog'
+import { useState } from 'react'
 
 export default function Header() {
   const { currentUser } = useAppStore()
   const { sidebarOpen, setSidebarOpen } = useUIStore()
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false)
 
   const getInitials = (name: string) => {
     return name
@@ -65,8 +68,8 @@ export default function Header() {
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => {
               if (currentUser) {
-                useAppStore.setState({ 
-                  currentUser: { ...currentUser, role: 'SUPERADMIN' } 
+                useAppStore.setState({
+                  currentUser: { ...currentUser, role: 'SUPERADMIN' }
                 })
               }
             }}>
@@ -74,8 +77,8 @@ export default function Header() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => {
               if (currentUser) {
-                useAppStore.setState({ 
-                  currentUser: { ...currentUser, role: 'MANAGER' } 
+                useAppStore.setState({
+                  currentUser: { ...currentUser, role: 'MANAGER' }
                 })
               }
             }}>
@@ -83,8 +86,8 @@ export default function Header() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => {
               if (currentUser) {
-                useAppStore.setState({ 
-                  currentUser: { ...currentUser, role: 'EMPLOYEE' } 
+                useAppStore.setState({
+                  currentUser: { ...currentUser, role: 'EMPLOYEE' }
                 })
               }
             }}>
@@ -115,6 +118,19 @@ export default function Header() {
               <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
             </div>
             <DropdownMenuSeparator />
+            {currentUser?.role !== 'SUPERADMIN' && (
+              <DropdownMenuItem onSelect={() => setStatusDialogOpen(true)}>
+                <div className="flex items-center w-full">
+                  <span className="mr-3 text-lg leading-none">{currentUser?.status?.emoji || '😊'}</span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium">{currentUser?.status?.text || 'Set Status'}</span>
+                    {currentUser?.status?.duration && (
+                      <span className="text-xs text-muted-foreground/80">{currentUser?.status?.duration}</span>
+                    )}
+                  </div>
+                </div>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem>
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
@@ -131,6 +147,11 @@ export default function Header() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <SetStatusDialog
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+      />
     </header>
   )
 }
