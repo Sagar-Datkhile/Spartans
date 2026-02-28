@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { useAppStore, useUIStore } from '@/lib/store'
 import { getRoleNavigationItems } from '@/lib/rbac'
 import Header from '@/components/dashboard/header'
@@ -17,13 +18,55 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     setMounted(true)
 
-    const currentStoreUser = useAppStore.getState().currentUser
-    if (!currentStoreUser) {
-      router.replace('/login')
-      return
-    }
+    const supabase = createClient()
 
-    setNavigationItems(getRoleNavigationItems(currentStoreUser.role) as any)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const currentStoreUser = useAppStore.getState().currentUser
+
+      if (!session?.user) {
+        // Allow demo users to bypass
+        if (currentStoreUser?.id?.startsWith('demo-') || currentStoreUser?.id?.startsWith('dev-')) {
+          setNavigationItems(getRoleNavigationItems(currentStoreUser.role) as any)
+          return
+        }
+        router.replace('/login')
+        return
+      }
+
+      // If already correctly loaded, skip
+      if (currentStoreUser?.id === session.user.id) return
+
+      // Load profile to get role
+      const { data: profile, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single()
+
+      if (error || !profile) {
+        await supabase.auth.signOut()
+        router.replace('/login')
+        return
+      }
+
+      const user = {
+        id: session.user.id,
+        email: profile.email,
+        name: profile.name,
+        role: profile.role,
+        avatar: profile.avatar_url,
+        companyId: profile.company_id,
+        departmentId: profile.department_id,
+        createdAt: new Date(profile.created_at),
+        updatedAt: new Date(profile.updated_at),
+      }
+      setCurrentUser(user)
+      setNavigationItems(getRoleNavigationItems(profile.role) as any)
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {

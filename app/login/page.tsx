@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { useAppStore } from '@/lib/store'
 import { Loader2 } from 'lucide-react'
 
@@ -66,18 +67,80 @@ export default function LoginPage() {
         setError('')
         setLoading(true)
 
-        // Bypass logic for development
-        const roleToUse = (role as any) || 'SUPERADMIN'
-        setCurrentUser({
-            id: 'dev-user-id',
-            email: email || `${roleToUse.toLowerCase()}@example.com`,
-            name: `Demo ${roleToUse}`,
-            role: roleToUse,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        })
-        router.push('/dashboard')
-        setLoading(false)
+        try {
+            const supabase = createClient()
+
+            // Bypass logic for development if no Supabase URL is set
+            if (!process.env.NEXT_PUBLIC_SUPABASE_URL || email.includes('dev')) {
+                const roleToUse = (role as any) || 'SUPERADMIN'
+                setCurrentUser({
+                    id: 'dev-user-id',
+                    email: email || `${roleToUse.toLowerCase()}@example.com`,
+                    name: `Demo ${roleToUse}`,
+                    role: roleToUse,
+                    companyId: 'dev-company',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                router.push('/dashboard')
+                return
+            }
+
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            })
+
+            if (authError) {
+                throw authError
+            }
+
+            if (!authData.user) {
+                throw new Error('No user returned after successful auth.')
+            }
+
+            // Fetch profile data to get role
+            const { data: profile, error: profileError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', authData.user.id)
+                .single()
+
+            if (profileError || !profile) {
+                await supabase.auth.signOut()
+                throw new Error('Account profile not found. Contact your administrator.')
+            }
+
+            setCurrentUser({
+                id: authData.user.id,
+                email: profile.email,
+                name: profile.name,
+                role: profile.role,
+                avatar: profile.avatar_url,
+                companyId: profile.company_id,
+                departmentId: profile.department_id,
+                createdAt: new Date(profile.created_at),
+                updatedAt: new Date(profile.updated_at),
+            })
+
+            // If account was pending, set it to active
+            if (profile.status === 'pending') {
+                await supabase.from('users').update({ status: 'active' }).eq('id', profile.id)
+            }
+
+            router.push('/dashboard')
+        } catch (err: any) {
+            console.error('Login error:', err)
+            if (
+                err.message.includes('Invalid login credentials')
+            ) {
+                setError('Invalid email or password. Please try again.')
+            } else {
+                setError(err.message || 'Sign in failed. Possible configuration issue.')
+            }
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (

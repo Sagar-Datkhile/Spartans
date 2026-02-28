@@ -1,0 +1,180 @@
+﻿Spartans
+Γö£ΓöÇΓöÇ FIRESTORE_SETUP.md
+Γö£ΓöÇΓöÇ README.md
+Γö£ΓöÇΓöÇ SUPABASE_SETUP.md
+Γö£ΓöÇΓöÇ app
+Γöé   Γö£ΓöÇΓöÇ api
+Γöé   Γöé   Γö£ΓöÇΓöÇ tasks
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ suggest-assignee
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ route.ts
+Γöé   Γöé   ΓööΓöÇΓöÇ users
+Γöé   Γöé       Γö£ΓöÇΓöÇ bulk-invite
+Γöé   Γöé       Γöé   ΓööΓöÇΓöÇ route.ts
+Γöé   Γöé       ΓööΓöÇΓöÇ invite
+Γöé   Γöé           ΓööΓöÇΓöÇ route.ts
+Γöé   Γö£ΓöÇΓöÇ dashboard
+Γöé   Γöé   Γö£ΓöÇΓöÇ analytics
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ page.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ assets
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ page.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ chat
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ page.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ layout.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ page.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ projects
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ page.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ settings
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ page.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ tasks
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ page.tsx
+Γöé   Γöé   ΓööΓöÇΓöÇ users
+Γöé   Γöé       ΓööΓöÇΓöÇ page.tsx
+Γöé   Γö£ΓöÇΓöÇ globals.css
+Γöé   Γö£ΓöÇΓöÇ layout.tsx
+Γöé   Γö£ΓöÇΓöÇ login
+Γöé   Γöé   ΓööΓöÇΓöÇ page.tsx
+Γöé   Γö£ΓöÇΓöÇ page.tsx
+Γöé   ΓööΓöÇΓöÇ set-password
+Γöé       ΓööΓöÇΓöÇ page.tsx
+Γö£ΓöÇΓöÇ components
+Γöé   Γö£ΓöÇΓöÇ auth
+Γöé   Γöé   ΓööΓöÇΓöÇ role-guard.tsx
+Γöé   Γö£ΓöÇΓöÇ dashboard
+Γöé   Γöé   Γö£ΓöÇΓöÇ admin-dashboard.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ employee-dashboard.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ employee-skills-card.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ header.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ manager-dashboard.tsx
+Γöé   Γöé   ΓööΓöÇΓöÇ sidebar.tsx
+Γöé   Γö£ΓöÇΓöÇ features
+Γöé   Γöé   Γö£ΓöÇΓöÇ admin
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin-panel.tsx
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ department-management.tsx
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ role-management.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ assets
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ asset-list.tsx
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ create-asset-dialog.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ chat
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ chat-interface.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ projects
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ create-project-dialog.tsx
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ project-list.tsx
+Γöé   Γöé   Γö£ΓöÇΓöÇ tasks
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ create-task-dialog.tsx
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ employee-task-modal.tsx
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ task-list.tsx
+Γöé   Γöé   ΓööΓöÇΓöÇ users
+Γöé   Γöé       Γö£ΓöÇΓöÇ bulk-invite-dialog.tsx
+Γöé   Γöé       Γö£ΓöÇΓöÇ create-user-dialog.tsx
+Γöé   Γöé       Γö£ΓöÇΓöÇ profile-dialog.tsx
+Γöé   Γöé       Γö£ΓöÇΓöÇ set-status-dialog.tsx
+Γöé   Γöé       ΓööΓöÇΓöÇ user-management.tsx
+Γöé   Γö£ΓöÇΓöÇ theme-provider.tsx
+Γöé   ΓööΓöÇΓöÇ ui
+Γöé       Γö£ΓöÇΓöÇ accordion.tsx
+Γöé       Γö£ΓöÇΓöÇ alert-dialog.tsx
+Γöé       Γö£ΓöÇΓöÇ alert.tsx
+Γöé       Γö£ΓöÇΓöÇ aspect-ratio.tsx
+Γöé       Γö£ΓöÇΓöÇ avatar.tsx
+Γöé       Γö£ΓöÇΓöÇ badge.tsx
+Γöé       Γö£ΓöÇΓöÇ breadcrumb.tsx
+Γöé       Γö£ΓöÇΓöÇ button-group.tsx
+Γöé       Γö£ΓöÇΓöÇ button.tsx
+Γöé       Γö£ΓöÇΓöÇ calendar.tsx
+Γöé       Γö£ΓöÇΓöÇ card.tsx
+Γöé       Γö£ΓöÇΓöÇ carousel.tsx
+Γöé       Γö£ΓöÇΓöÇ chart.tsx
+Γöé       Γö£ΓöÇΓöÇ checkbox.tsx
+Γöé       Γö£ΓöÇΓöÇ collapsible.tsx
+Γöé       Γö£ΓöÇΓöÇ command.tsx
+Γöé       Γö£ΓöÇΓöÇ context-menu.tsx
+Γöé       Γö£ΓöÇΓöÇ dialog.tsx
+Γöé       Γö£ΓöÇΓöÇ drawer.tsx
+Γöé       Γö£ΓöÇΓöÇ dropdown-menu.tsx
+Γöé       Γö£ΓöÇΓöÇ empty.tsx
+Γöé       Γö£ΓöÇΓöÇ field.tsx
+Γöé       Γö£ΓöÇΓöÇ form.tsx
+Γöé       Γö£ΓöÇΓöÇ hover-card.tsx
+Γöé       Γö£ΓöÇΓöÇ input-group.tsx
+Γöé       Γö£ΓöÇΓöÇ input-otp.tsx
+Γöé       Γö£ΓöÇΓöÇ input.tsx
+Γöé       Γö£ΓöÇΓöÇ item.tsx
+Γöé       Γö£ΓöÇΓöÇ kbd.tsx
+Γöé       Γö£ΓöÇΓöÇ label.tsx
+Γöé       Γö£ΓöÇΓöÇ menubar.tsx
+Γöé       Γö£ΓöÇΓöÇ navigation-menu.tsx
+Γöé       Γö£ΓöÇΓöÇ pagination.tsx
+Γöé       Γö£ΓöÇΓöÇ popover.tsx
+Γöé       Γö£ΓöÇΓöÇ progress.tsx
+Γöé       Γö£ΓöÇΓöÇ radio-group.tsx
+Γöé       Γö£ΓöÇΓöÇ resizable.tsx
+Γöé       Γö£ΓöÇΓöÇ scroll-area.tsx
+Γöé       Γö£ΓöÇΓöÇ select.tsx
+Γöé       Γö£ΓöÇΓöÇ separator.tsx
+Γöé       Γö£ΓöÇΓöÇ sheet.tsx
+Γöé       Γö£ΓöÇΓöÇ sidebar.tsx
+Γöé       Γö£ΓöÇΓöÇ skeleton.tsx
+Γöé       Γö£ΓöÇΓöÇ slider.tsx
+Γöé       Γö£ΓöÇΓöÇ sonner.tsx
+Γöé       Γö£ΓöÇΓöÇ spinner.tsx
+Γöé       Γö£ΓöÇΓöÇ switch.tsx
+Γöé       Γö£ΓöÇΓöÇ table.tsx
+Γöé       Γö£ΓöÇΓöÇ tabs.tsx
+Γöé       Γö£ΓöÇΓöÇ textarea.tsx
+Γöé       Γö£ΓöÇΓöÇ toast.tsx
+Γöé       Γö£ΓöÇΓöÇ toaster.tsx
+Γöé       Γö£ΓöÇΓöÇ toggle-group.tsx
+Γöé       Γö£ΓöÇΓöÇ toggle.tsx
+Γöé       Γö£ΓöÇΓöÇ tooltip.tsx
+Γöé       Γö£ΓöÇΓöÇ use-mobile.tsx
+Γöé       ΓööΓöÇΓöÇ use-toast.ts
+Γö£ΓöÇΓöÇ components.json
+Γö£ΓöÇΓöÇ hooks
+Γöé   Γö£ΓöÇΓöÇ use-mobile.ts
+Γöé   ΓööΓöÇΓöÇ use-toast.ts
+Γö£ΓöÇΓöÇ lib
+Γöé   Γö£ΓöÇΓöÇ hooks
+Γöé   Γöé   Γö£ΓöÇΓöÇ useAssets.ts
+Γöé   Γöé   Γö£ΓöÇΓöÇ useProjects.ts
+Γöé   Γöé   ΓööΓöÇΓöÇ useTasks.ts
+Γöé   Γö£ΓöÇΓöÇ middleware
+Γöé   Γöé   ΓööΓöÇΓöÇ authMiddleware.ts
+Γöé   Γö£ΓöÇΓöÇ models.ts
+Γöé   Γö£ΓöÇΓöÇ rbac.ts
+Γöé   Γö£ΓöÇΓöÇ services
+Γöé   Γöé   ΓööΓöÇΓöÇ notifications.ts
+Γöé   Γö£ΓöÇΓöÇ store.ts
+Γöé   Γö£ΓöÇΓöÇ supabase
+Γöé   Γöé   Γö£ΓöÇΓöÇ admin.ts
+Γöé   Γöé   Γö£ΓöÇΓöÇ client.ts
+Γöé   Γöé   ΓööΓöÇΓöÇ server.ts
+Γöé   Γö£ΓöÇΓöÇ utils
+Γöé   Γöé   Γö£ΓöÇΓöÇ analytics.ts
+Γöé   Γöé   Γö£ΓöÇΓöÇ csv.ts
+Γöé   Γöé   Γö£ΓöÇΓöÇ dates.ts
+Γöé   Γöé   Γö£ΓöÇΓöÇ export.ts
+Γöé   Γöé   Γö£ΓöÇΓöÇ resource-optimizer.ts
+Γöé   Γöé   ΓööΓöÇΓöÇ validation.ts
+Γöé   ΓööΓöÇΓöÇ utils.ts
+Γö£ΓöÇΓöÇ next-env.d.ts
+Γö£ΓöÇΓöÇ next.config.mjs
+Γö£ΓöÇΓöÇ package-lock.json
+Γö£ΓöÇΓöÇ package.json
+Γö£ΓöÇΓöÇ pnpm-lock.yaml
+Γö£ΓöÇΓöÇ postcss.config.mjs
+Γö£ΓöÇΓöÇ public
+Γöé   Γö£ΓöÇΓöÇ apple-icon.png
+Γöé   Γö£ΓöÇΓöÇ icon-dark-32x32.png
+Γöé   Γö£ΓöÇΓöÇ icon-light-32x32.png
+Γöé   Γö£ΓöÇΓöÇ icon.svg
+Γöé   Γö£ΓöÇΓöÇ placeholder-logo.png
+Γöé   Γö£ΓöÇΓöÇ placeholder-logo.svg
+Γöé   Γö£ΓöÇΓöÇ placeholder-user.jpg
+Γöé   Γö£ΓöÇΓöÇ placeholder.jpg
+Γöé   ΓööΓöÇΓöÇ placeholder.svg
+Γö£ΓöÇΓöÇ styles
+Γöé   ΓööΓöÇΓöÇ globals.css
+Γö£ΓöÇΓöÇ tree.txt
+Γö£ΓöÇΓöÇ ts_error.txt
+Γö£ΓöÇΓöÇ tsconfig.json
+ΓööΓöÇΓöÇ tsconfig.tsbuildinfo
