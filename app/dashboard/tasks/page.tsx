@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/lib/store'
 import TaskList from '@/components/features/tasks/task-list'
 import CreateTaskDialog from '@/components/features/tasks/create-task-dialog'
+import { useAppStore } from '@/lib/store'
 
 export default function TasksPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const currentUser = useAppStore((state) => state.currentUser)
+  const { currentUser } = useAppStore()
 
   return (
     <div className="space-y-6 p-6">
@@ -28,7 +29,9 @@ export default function TasksPage() {
 
       <TaskList />
 
-      <CreateTaskDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      {currentUser?.role !== 'EMPLOYEE' && (
+        <CreateTaskDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      )}
     </div>
   )
 }
