@@ -21,8 +21,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setMounted(true)
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Allow demo users to bypass Firebase Auth
+      const currentStoreUser = useAppStore.getState().currentUser
       if (!firebaseUser) {
-        // Not logged in — redirect to login
+        if (currentStoreUser?.id?.startsWith('demo-')) {
+          setNavigationItems(getRoleNavigationItems(currentStoreUser.role) as any)
+          return
+        }
+        // Not logged in and not a demo user — redirect to login
         router.replace('/login')
         return
       }
