@@ -4,191 +4,187 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, ShieldCheck, CheckCircle2, XCircle } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
 
 function SetPasswordForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const oobCode = searchParams.get('oobCode')  // Firebase sends this in the link
-    const email = searchParams.get('email')
+    const oobCode = searchParams.get('oobCode')
+    const emailParam = searchParams.get('email')
 
     const [password, setPassword] = useState('')
     const [confirm, setConfirm] = useState('')
-    const [status, setStatus] = useState<'idle' | 'loading' | 'verifying' | 'success' | 'error'>('verifying')
+    const [showPassword, setShowPassword] = useState(false)
+    const [status, setStatus] = useState<'verifying' | 'idle' | 'loading' | 'success' | 'error'>('verifying')
     const [error, setError] = useState('')
-    const [verifiedEmail, setVerifiedEmail] = useState(email || '')
+    const [verifiedEmail, setVerifiedEmail] = useState(emailParam || '')
 
     useEffect(() => {
-        // Verify the reset code is valid
         if (!oobCode) {
             setStatus('error')
-            setError('Invalid or expired invite link. Please ask your administrator to resend the invite.')
+            setError('Invalid or expired invite link. Please ask your administrator to resend.')
             return
         }
-
         verifyPasswordResetCode(auth, oobCode)
-            .then((email) => {
-                setVerifiedEmail(email)
-                setStatus('idle')
-            })
+            .then((email) => { setVerifiedEmail(email); setStatus('idle') })
             .catch(() => {
                 setStatus('error')
-                setError('This invite link has expired or already been used. Please contact your administrator.')
+                setError('This invite link has expired or already been used.')
             })
     }, [oobCode])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
-
-        if (password.length < 8) {
-            setError('Password must be at least 8 characters.')
-            return
-        }
-        if (password !== confirm) {
-            setError('Passwords do not match.')
-            return
-        }
-
+        if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+        if (password !== confirm) { setError('Passwords do not match.'); return }
         setStatus('loading')
         try {
             await confirmPasswordReset(auth, oobCode!, password)
             setStatus('success')
-            // Redirect to login after 2s
             setTimeout(() => router.push('/login'), 2000)
         } catch (err: any) {
             setStatus('idle')
-            if (err.code === 'auth/expired-action-code') {
-                setError('This invite link has expired. Please ask your administrator to resend the invite.')
-            } else if (err.code === 'auth/weak-password') {
-                setError('Password is too weak. Please choose a stronger password.')
-            } else {
-                setError('Failed to set password. Please try again.')
-            }
+            setError(err.code === 'auth/weak-password'
+                ? 'Password is too weak. Please choose a stronger one.'
+                : 'Failed to set password. The link may have expired.')
         }
     }
 
+    const checks = [
+        { label: 'At least 8 characters', pass: password.length >= 8 },
+        { label: 'One uppercase letter', pass: /[A-Z]/.test(password) },
+        { label: 'One number', pass: /[0-9]/.test(password) },
+    ]
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-            <div className="w-full max-w-md space-y-6">
-                {/* Logo */}
-                <div className="text-center space-y-2">
-                    <div className="flex justify-center">
-                        <div className="h-14 w-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                            <ShieldCheck className="h-8 w-8 text-white" />
-                        </div>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-sm">
+
+                {/* Brand */}
+                <div className="flex items-center gap-3 mb-8 justify-center">
+                    <div className="h-10 w-10 rounded-lg bg-black flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">S</span>
                     </div>
-                    <h1 className="text-3xl font-bold text-white">Spartans</h1>
-                    <p className="text-slate-400 text-sm">Enterprise Performance Management</p>
+                    <div>
+                        <p className="font-bold text-xl text-gray-900 leading-tight">Spartans</p>
+                        <p className="text-xs text-gray-500">Performance Management</p>
+                    </div>
                 </div>
 
-                <Card className="border-slate-700 bg-slate-800/60 backdrop-blur-sm shadow-2xl">
-                    <CardHeader className="space-y-1 pb-4">
-                        <CardTitle className="text-xl text-white">Set Your Password</CardTitle>
-                        <CardDescription className="text-slate-400">
-                            {verifiedEmail ? (
-                                <>Welcome! You&apos;re setting up access for <span className="text-blue-400">{verifiedEmail}</span></>
-                            ) : (
-                                'Set a secure password to activate your account'
-                            )}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {/* Verifying state */}
-                        {status === 'verifying' && (
-                            <div className="flex flex-col items-center gap-3 py-8">
-                                <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-                                <p className="text-slate-400 text-sm">Verifying your invite link...</p>
-                            </div>
-                        )}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
 
-                        {/* Error state (invalid/expired link) */}
-                        {status === 'error' && (
-                            <div className="flex flex-col items-center gap-4 py-6 text-center">
-                                <XCircle className="h-12 w-12 text-red-400" />
-                                <p className="text-slate-300 font-medium">Link Invalid or Expired</p>
-                                <p className="text-slate-400 text-sm">{error}</p>
-                                <Button
-                                    variant="outline"
-                                    className="mt-2 border-slate-600 text-slate-300"
-                                    onClick={() => router.push('/login')}
-                                >
-                                    Back to Login
-                                </Button>
-                            </div>
-                        )}
+                    {/* Verifying */}
+                    {status === 'verifying' && (
+                        <div className="flex flex-col items-center gap-3 py-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                            <p className="text-sm text-gray-500">Verifying your invite link...</p>
+                        </div>
+                    )}
 
-                        {/* Success state */}
-                        {status === 'success' && (
-                            <div className="flex flex-col items-center gap-4 py-6 text-center">
-                                <CheckCircle2 className="h-12 w-12 text-green-400" />
-                                <p className="text-slate-300 font-medium">Password Set Successfully!</p>
-                                <p className="text-slate-400 text-sm">Redirecting you to the login page...</p>
-                                <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
+                    {/* Error */}
+                    {status === 'error' && (
+                        <div className="flex flex-col items-center gap-4 py-6 text-center">
+                            <XCircle className="h-12 w-12 text-red-400" />
+                            <div>
+                                <p className="font-semibold text-gray-900">Link Invalid or Expired</p>
+                                <p className="text-sm text-gray-500 mt-1">{error}</p>
                             </div>
-                        )}
+                            <button
+                                onClick={() => router.push('/login')}
+                                className="mt-2 px-4 py-2 text-sm font-medium bg-black text-white rounded-lg hover:bg-gray-800 transition"
+                            >
+                                Back to Login
+                            </button>
+                        </div>
+                    )}
 
-                        {/* Form state */}
-                        {(status === 'idle' || status === 'loading') && (
+                    {/* Success */}
+                    {status === 'success' && (
+                        <div className="flex flex-col items-center gap-4 py-6 text-center">
+                            <CheckCircle2 className="h-12 w-12 text-green-500" />
+                            <div>
+                                <p className="font-semibold text-gray-900">Password Set!</p>
+                                <p className="text-sm text-gray-500 mt-1">Redirecting you to login...</p>
+                            </div>
+                            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                        </div>
+                    )}
+
+                    {/* Form */}
+                    {(status === 'idle' || status === 'loading') && (
+                        <>
+                            <h1 className="text-2xl font-bold text-gray-900 mb-1">Set your password</h1>
+                            <p className="text-sm text-gray-500 mb-6">
+                                {verifiedEmail ? (
+                                    <>Setting up access for <span className="font-medium text-gray-800">{verifiedEmail}</span></>
+                                ) : 'Activate your Spartans account.'}
+                            </p>
+
                             <form onSubmit={handleSubmit} className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="password" className="text-slate-300">New Password</Label>
-                                    <Input
+                                <div>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <label htmlFor="password" className="text-sm font-medium text-gray-700">New Password</label>
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-xs text-gray-500 hover:text-gray-900 transition">
+                                            {showPassword ? 'Hide' : 'Show'}
+                                        </button>
+                                    </div>
+                                    <input
                                         id="password"
-                                        type="password"
+                                        type={showPassword ? 'text' : 'password'}
                                         placeholder="Minimum 8 characters"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
-                                        className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition"
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="confirm" className="text-slate-300">Confirm Password</Label>
-                                    <Input
+                                <div>
+                                    <label htmlFor="confirm" className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password</label>
+                                    <input
                                         id="confirm"
-                                        type="password"
+                                        type={showPassword ? 'text' : 'password'}
                                         placeholder="Re-enter your password"
                                         value={confirm}
                                         onChange={(e) => setConfirm(e.target.value)}
                                         required
-                                        className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition"
                                     />
                                 </div>
 
-                                {/* Password strength hints */}
-                                <ul className="text-xs text-slate-500 space-y-1 pl-1">
-                                    <li className={password.length >= 8 ? 'text-green-400' : ''}>✓ At least 8 characters</li>
-                                    <li className={/[A-Z]/.test(password) ? 'text-green-400' : ''}>✓ One uppercase letter</li>
-                                    <li className={/[0-9]/.test(password) ? 'text-green-400' : ''}>✓ One number</li>
+                                {/* Password strength */}
+                                <ul className="space-y-1">
+                                    {checks.map((c) => (
+                                        <li key={c.label} className={`text-xs flex items-center gap-1.5 ${c.pass ? 'text-green-600' : 'text-gray-400'}`}>
+                                            <span>{c.pass ? '✓' : '○'}</span> {c.label}
+                                        </li>
+                                    ))}
                                 </ul>
 
                                 {error && (
-                                    <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3">
-                                        <p className="text-sm text-red-400">{error}</p>
+                                    <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+                                        <p className="text-sm text-red-600">{error}</p>
                                     </div>
                                 )}
 
-                                <Button
+                                <button
                                     type="submit"
                                     disabled={status === 'loading'}
-                                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium h-11"
+                                    className="w-full flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white text-sm font-medium py-2.5 rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed mt-2"
                                 >
                                     {status === 'loading' ? (
-                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Setting password...</>
-                                    ) : (
-                                        'Activate My Account'
-                                    )}
-                                </Button>
+                                        <><Loader2 className="h-4 w-4 animate-spin" />Setting password...</>
+                                    ) : 'Activate My Account'}
+                                </button>
                             </form>
-                        )}
-                    </CardContent>
-                </Card>
+                        </>
+                    )}
+                </div>
+
+                <p className="text-center text-xs text-gray-400 mt-6">
+                    © 2025 Spartans Platform · All rights reserved
+                </p>
             </div>
         </div>
     )
@@ -197,8 +193,8 @@ function SetPasswordForm() {
 export default function SetPasswordPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-slate-900">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
             </div>
         }>
             <SetPasswordForm />
