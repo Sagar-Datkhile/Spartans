@@ -17,6 +17,8 @@ export interface User {
   companyId?: string
   departmentId?: string
   status?: EmployeeStatus | null
+  skills?: string[]
+  baseCapacityHours?: number
   createdAt: Date
   updatedAt: Date
 }

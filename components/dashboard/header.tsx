@@ -12,12 +12,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import SetStatusDialog from '@/components/features/users/set-status-dialog'
+import ProfileDialog from '@/components/features/users/profile-dialog'
 import { useState } from 'react'
 
 export default function Header() {
   const { currentUser } = useAppStore()
   const { sidebarOpen, setSidebarOpen } = useUIStore()
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false)
 
   const getInitials = (name: string) => {
     return name
@@ -131,7 +133,7 @@ export default function Header() {
                 </div>
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setProfileDialogOpen(true)}>
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
@@ -151,6 +153,10 @@ export default function Header() {
       <SetStatusDialog
         open={statusDialogOpen}
         onOpenChange={setStatusDialogOpen}
+      />
+      <ProfileDialog
+        open={profileDialogOpen}
+        onOpenChange={setProfileDialogOpen}
       />
     </header>
   )
