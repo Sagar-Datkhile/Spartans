@@ -1,7 +1,11 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { Button } from '@/components/ui/button'
+import { UserPlus } from 'lucide-react'
+import { useState } from 'react'
+import CreateUserDialog from '@/components/features/users/create-user-dialog'
 
 const data = [
   { name: 'Jan', users: 400, projects: 240, tasks: 2400 },
@@ -12,8 +16,18 @@ const data = [
 ]
 
 export default function AdminDashboard() {
+  const [createUserOpen, setCreateUserOpen] = useState(false)
+
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">SuperAdmin Overview</h2>
+        <Button onClick={() => setCreateUserOpen(true)}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Create Manager
+        </Button>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -76,6 +90,11 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      <CreateUserDialog
+        open={createUserOpen}
+        onOpenChange={setCreateUserOpen}
+      />
     </div>
   )
 }

@@ -17,6 +17,7 @@ const rolePermissions: Record<UserRole, Feature[]> = {
     'dashboard',
     'projects',
     'tasks',
+    'gantt',
     'assets',
     'analytics',
     'chat',
@@ -92,7 +93,7 @@ export const getRoleNavigationItems = (role: UserRole) => {
       label: 'Gantt Chart',
       icon: 'BarChart3',
       href: '/dashboard/gantt',
-      visible: ['MANAGER', 'EMPLOYEE'] as UserRole[],
+      visible: ['SUPERADMIN', 'MANAGER', 'EMPLOYEE'] as UserRole[],
     },
     {
       id: 'assets',

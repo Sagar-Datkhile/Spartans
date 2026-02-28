@@ -60,21 +60,48 @@ export default function CreateUserDialog({ open, onOpenChange, onSuccess }: Crea
     setFormData({ ...formData, password })
   }
 
-  const handleCreate = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleCreate = async () => {
     if (!formData.emailPrefix || !formData.password || !formData.name) {
       toast.error('Please fill in all required fields')
       return
     }
 
+    setIsSubmitting(true)
     const fullEmail = `${formData.emailPrefix.toLowerCase()}${corporateDomain}`
 
-    // Simulate creation
-    setCreatedCredentials({
-      email: fullEmail,
-      password: formData.password,
-    })
-    toast.success('User created successfully')
-    onSuccess?.()
+    try {
+      const res = await fetch('/api/users/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: fullEmail,
+          password: formData.password,
+          name: formData.name,
+          role: formData.role,
+          companyId: currentUser?.companyId,
+          departmentId: formData.department || undefined,
+          phone: formData.phone || undefined,
+          createdBy: currentUser?.id,
+          managerId: currentUser?.role === 'MANAGER' ? currentUser.id : undefined
+        })
+      });
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to create user')
+
+      setCreatedCredentials({
+        email: fullEmail,
+        password: formData.password,
+      })
+      toast.success('User created successfully')
+      onSuccess?.()
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const copyToClipboard = (text: string, label: string) => {
@@ -273,7 +300,9 @@ export default function CreateUserDialog({ open, onOpenChange, onSuccess }: Crea
             <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button className="flex-1" onClick={handleCreate}>Create User & Credentials</Button>
+            <Button className="flex-1" onClick={handleCreate} disabled={isSubmitting}>
+              {isSubmitting ? 'Creating...' : 'Create User & Credentials'}
+            </Button>
           </div>
         </div>
       </DialogContent>
