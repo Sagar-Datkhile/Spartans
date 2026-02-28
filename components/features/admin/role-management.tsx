@@ -47,7 +47,7 @@ export default function RoleManagement() {
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold">{role}</h3>
                     <Badge variant="outline">
-                      {role === 'SUPERADMIN' ? '10' : role === 'MANAGER' ? '8' : '4'} permissions
+                      {role === 'SUPERADMIN' ? '9' : role === 'MANAGER' ? '8' : '5'} permissions
                     </Badge>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => handleEditRole(role)}>
@@ -55,11 +55,18 @@ export default function RoleManagement() {
                   </Button>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {availablePermissions.slice(0, role === 'SUPERADMIN' ? 10 : role === 'MANAGER' ? 8 : 4).map((perm) => (
-                    <div key={perm} className="text-xs bg-muted px-2 py-1 rounded">
-                      {perm}
-                    </div>
-                  ))}
+                  {availablePermissions
+                    .filter(perm => {
+                      if (role === 'SUPERADMIN') return perm !== 'gantt'
+                      if (role === 'MANAGER') return perm !== 'user_management' && perm !== 'settings'
+                      if (role === 'EMPLOYEE') return ['dashboard', 'tasks', 'chat', 'analytics', 'gantt'].includes(perm)
+                      return false
+                    })
+                    .map((perm) => (
+                      <div key={perm} className="text-xs bg-muted px-2 py-1 rounded">
+                        {perm}
+                      </div>
+                    ))}
                 </div>
               </div>
             ))}

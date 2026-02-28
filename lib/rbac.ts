@@ -1,6 +1,6 @@
 import { UserRole } from './store'
 
-export type Feature = 
+export type Feature =
   | 'dashboard'
   | 'projects'
   | 'tasks'
@@ -17,7 +17,6 @@ const rolePermissions: Record<UserRole, Feature[]> = {
     'dashboard',
     'projects',
     'tasks',
-    'gantt',
     'assets',
     'analytics',
     'chat',
@@ -40,6 +39,7 @@ const rolePermissions: Record<UserRole, Feature[]> = {
     'tasks',
     'chat',
     'analytics',
+    'gantt',
   ],
 }
 
@@ -92,7 +92,7 @@ export const getRoleNavigationItems = (role: UserRole) => {
       label: 'Gantt Chart',
       icon: 'BarChart3',
       href: '/dashboard/gantt',
-      visible: ['SUPERADMIN', 'MANAGER'] as UserRole[],
+      visible: ['MANAGER', 'EMPLOYEE'] as UserRole[],
     },
     {
       id: 'assets',
