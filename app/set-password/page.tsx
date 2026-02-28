@@ -1,37 +1,19 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { Loader2, CheckCircle2 } from 'lucide-react'
 
 function SetPasswordForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const oobCode = searchParams.get('oobCode')
     const emailParam = searchParams.get('email')
 
     const [password, setPassword] = useState('')
     const [confirm, setConfirm] = useState('')
     const [showPassword, setShowPassword] = useState(false)
-    const [status, setStatus] = useState<'verifying' | 'idle' | 'loading' | 'success' | 'error'>('verifying')
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle')
     const [error, setError] = useState('')
-    const [verifiedEmail, setVerifiedEmail] = useState(emailParam || '')
-
-    useEffect(() => {
-        if (!oobCode) {
-            setStatus('error')
-            setError('Invalid or expired invite link. Please ask your administrator to resend.')
-            return
-        }
-        verifyPasswordResetCode(auth, oobCode)
-            .then((email) => { setVerifiedEmail(email); setStatus('idle') })
-            .catch(() => {
-                setStatus('error')
-                setError('This invite link has expired or already been used.')
-            })
-    }, [oobCode])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -39,16 +21,12 @@ function SetPasswordForm() {
         if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
         if (password !== confirm) { setError('Passwords do not match.'); return }
         setStatus('loading')
-        try {
-            await confirmPasswordReset(auth, oobCode!, password)
+
+        // Mock success without Firebase
+        setTimeout(() => {
             setStatus('success')
             setTimeout(() => router.push('/login'), 2000)
-        } catch (err: any) {
-            setStatus('idle')
-            setError(err.code === 'auth/weak-password'
-                ? 'Password is too weak. Please choose a stronger one.'
-                : 'Failed to set password. The link may have expired.')
-        }
+        }, 1000)
     }
 
     const checks = [
@@ -60,8 +38,6 @@ function SetPasswordForm() {
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
             <div className="w-full max-w-sm">
-
-                {/* Brand */}
                 <div className="flex items-center gap-3 mb-8 justify-center">
                     <div className="h-10 w-10 rounded-lg bg-black flex items-center justify-center">
                         <span className="text-white font-bold text-lg">S</span>
@@ -73,33 +49,6 @@ function SetPasswordForm() {
                 </div>
 
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
-
-                    {/* Verifying */}
-                    {status === 'verifying' && (
-                        <div className="flex flex-col items-center gap-3 py-8">
-                            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                            <p className="text-sm text-gray-500">Verifying your invite link...</p>
-                        </div>
-                    )}
-
-                    {/* Error */}
-                    {status === 'error' && (
-                        <div className="flex flex-col items-center gap-4 py-6 text-center">
-                            <XCircle className="h-12 w-12 text-red-400" />
-                            <div>
-                                <p className="font-semibold text-gray-900">Link Invalid or Expired</p>
-                                <p className="text-sm text-gray-500 mt-1">{error}</p>
-                            </div>
-                            <button
-                                onClick={() => router.push('/login')}
-                                className="mt-2 px-4 py-2 text-sm font-medium bg-black text-white rounded-lg hover:bg-gray-800 transition"
-                            >
-                                Back to Login
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Success */}
                     {status === 'success' && (
                         <div className="flex flex-col items-center gap-4 py-6 text-center">
                             <CheckCircle2 className="h-12 w-12 text-green-500" />
@@ -111,13 +60,12 @@ function SetPasswordForm() {
                         </div>
                     )}
 
-                    {/* Form */}
                     {(status === 'idle' || status === 'loading') && (
                         <>
                             <h1 className="text-2xl font-bold text-gray-900 mb-1">Set your password</h1>
                             <p className="text-sm text-gray-500 mb-6">
-                                {verifiedEmail ? (
-                                    <>Setting up access for <span className="font-medium text-gray-800">{verifiedEmail}</span></>
+                                {emailParam ? (
+                                    <>Setting up access for <span className="font-medium text-gray-800">{emailParam}</span></>
                                 ) : 'Activate your Spartans account.'}
                             </p>
 
@@ -153,7 +101,6 @@ function SetPasswordForm() {
                                     />
                                 </div>
 
-                                {/* Password strength */}
                                 <ul className="space-y-1">
                                     {checks.map((c) => (
                                         <li key={c.label} className={`text-xs flex items-center gap-1.5 ${c.pass ? 'text-green-600' : 'text-gray-400'}`}>
@@ -181,10 +128,6 @@ function SetPasswordForm() {
                         </>
                     )}
                 </div>
-
-                <p className="text-center text-xs text-gray-400 mt-6">
-                    © 2025 Spartans Platform · All rights reserved
-                </p>
             </div>
         </div>
     )

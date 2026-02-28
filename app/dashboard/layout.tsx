@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { onAuthStateChanged } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
-import { getUser } from '@/lib/services/firestore'
+import { createClient } from '@/lib/supabase/client'
 import { useAppStore, useUIStore } from '@/lib/store'
 import { getRoleNavigationItems } from '@/lib/rbac'
 import Header from '@/components/dashboard/header'
@@ -20,46 +18,55 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     setMounted(true)
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      // Allow demo users to bypass Firebase Auth
+    const supabase = createClient()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const currentStoreUser = useAppStore.getState().currentUser
-      if (!firebaseUser) {
-        if (currentStoreUser?.id?.startsWith('demo-')) {
+
+      if (!session?.user) {
+        // Allow demo users to bypass
+        if (currentStoreUser?.id?.startsWith('demo-') || currentStoreUser?.id?.startsWith('dev-')) {
           setNavigationItems(getRoleNavigationItems(currentStoreUser.role) as any)
           return
         }
-        // Not logged in and not a demo user — redirect to login
         router.replace('/login')
         return
       }
 
-      // If Zustand already has this user loaded, skip
-      if (currentUser?.id === firebaseUser.uid) return
+      // If already correctly loaded, skip
+      if (currentStoreUser?.id === session.user.id) return
 
-      // Load profile from Firestore
-      const profile = await getUser(firebaseUser.uid)
-      if (!profile) {
-        await auth.signOut()
+      // Load profile to get role
+      const { data: profile, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single()
+
+      if (error || !profile) {
+        await supabase.auth.signOut()
         router.replace('/login')
         return
       }
 
       const user = {
-        id: firebaseUser.uid,
+        id: session.user.id,
         email: profile.email,
         name: profile.name,
         role: profile.role,
-        avatar: profile.avatar,
-        companyId: profile.companyId,
-        departmentId: profile.departmentId,
-        createdAt: profile.createdAt.toDate(),
-        updatedAt: profile.updatedAt.toDate(),
+        avatar: profile.avatar_url,
+        companyId: profile.company_id,
+        departmentId: profile.department_id,
+        createdAt: new Date(profile.created_at),
+        updatedAt: new Date(profile.updated_at),
       }
       setCurrentUser(user)
       setNavigationItems(getRoleNavigationItems(profile.role) as any)
     })
 
-    return () => unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {

@@ -4,6 +4,8 @@ import { Menu, Settings, LogOut, User } from 'lucide-react'
 import { useAppStore, useUIStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +22,14 @@ export default function Header() {
   const { sidebarOpen, setSidebarOpen } = useUIStore()
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
   const [profileDialogOpen, setProfileDialogOpen] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    useAppStore.setState({ currentUser: null })
+    router.replace('/login')
+  }
 
   const getInitials = (name: string) => {
     return name
@@ -142,7 +152,7 @@ export default function Header() {
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">
+            <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Logout</span>
             </DropdownMenuItem>
