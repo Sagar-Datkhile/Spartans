@@ -12,18 +12,11 @@ import { Loader2 } from 'lucide-react'
 export default function LoginPage() {
     const router = useRouter()
     const { setCurrentUser } = useAppStore()
-    const [role, setRole] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
-
-    const roles = [
-        { value: 'SUPERADMIN', label: 'Super Admin', dot: 'bg-red-500' },
-        { value: 'MANAGER', label: 'Manager', dot: 'bg-blue-500' },
-        { value: 'EMPLOYEE', label: 'Employee', dot: 'bg-green-500' },
-    ]
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -35,7 +28,7 @@ export default function LoginPage() {
 
             // Bypass logic for development if no Supabase URL is set
             if (!process.env.NEXT_PUBLIC_SUPABASE_URL || email.includes('dev')) {
-                const roleToUse = (role as any) || 'SUPERADMIN'
+                const roleToUse = 'SUPERADMIN'
                 setCurrentUser({
                     id: 'dev-user-id',
                     email: email || `${roleToUse.toLowerCase()}@example.com`,
@@ -45,7 +38,7 @@ export default function LoginPage() {
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
-                router.push('/dashboard')
+                router.push('/dashboard/superadmin')
                 return
             }
 
@@ -91,7 +84,15 @@ export default function LoginPage() {
                 await supabase.from('users').update({ status: 'active' }).eq('id', profile.id)
             }
 
-            router.push('/dashboard')
+            if (profile.role === 'SUPERADMIN') {
+                router.push('/dashboard/superadmin')
+            } else if (profile.role === 'MANAGER') {
+                router.push('/dashboard/manager')
+            } else if (profile.role === 'EMPLOYEE') {
+                router.push('/dashboard/employee')
+            } else {
+                router.push('/dashboard')
+            }
         } catch (err: any) {
             console.error('Login error:', err)
             if (
@@ -130,41 +131,6 @@ export default function LoginPage() {
 
                     {/* Login Form */}
                     <form onSubmit={handleLogin} className="space-y-4">
-                        {/* Role */}
-                        <div>
-                            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1.5">
-                                I am signing in as
-                            </label>
-                            <div className="relative">
-                                <select
-                                    id="role"
-                                    value={role}
-                                    onChange={(e) => setRole(e.target.value)}
-                                    required
-                                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition appearance-none cursor-pointer"
-                                >
-                                    <option value="" disabled>Select your role...</option>
-                                    {roles.map((r) => (
-                                        <option key={r.value} value={r.value}>{r.label}</option>
-                                    ))}
-                                </select>
-                                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-                                    </svg>
-                                </div>
-                            </div>
-                            {role && (() => {
-                                const sel = roles.find(r => r.value === role)
-                                return sel ? (
-                                    <div className="mt-2 flex items-center gap-1.5">
-                                        <span className={`h-2 w-2 rounded-full ${sel.dot}`} />
-                                        <span className="text-xs text-gray-500">Signing in as <span className="font-medium text-gray-800">{sel.label}</span></span>
-                                    </div>
-                                ) : null
-                            })()}
-                        </div>
-
                         {/* Email */}
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">

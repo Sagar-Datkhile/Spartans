@@ -1,14 +1,23 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useUIStore } from '@/lib/store'
+import { usePathname, useRouter } from 'next/navigation'
+import { useUIStore, useAppStore } from '@/lib/store'
+import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import * as Icons from 'lucide-react'
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { navigationItems, sidebarOpen } = useUIStore()
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    useAppStore.setState({ currentUser: null })
+    router.replace('/login')
+  }
 
   const getIcon = (iconName: string) => {
     const iconMap: Record<string, any> = {
@@ -78,13 +87,20 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-sidebar-border px-3 py-4">
+        <div className="border-t border-sidebar-border px-3 py-4 space-y-2">
           <div className="rounded-lg bg-sidebar-accent p-4">
             <p className="text-xs font-semibold text-sidebar-foreground">Need Help?</p>
             <p className="mt-1 text-xs text-sidebar-foreground/70">
               Check our documentation for guides and support.
             </p>
           </div>
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-500 hover:bg-sidebar-accent transition-colors"
+          >
+            <Icons.LogOut className="h-5 w-5" />
+            <span>Logout</span>
+          </button>
         </div>
       </aside>
     </>

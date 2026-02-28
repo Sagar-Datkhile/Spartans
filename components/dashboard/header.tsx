@@ -116,7 +116,10 @@ export default function Header() {
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+            <DropdownMenuItem className="text-red-600" onSelect={(e) => {
+              e.preventDefault();
+              handleLogout();
+            }}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Logout</span>
             </DropdownMenuItem>
