@@ -20,38 +20,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     setMounted(true)
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
-        // Not logged in — redirect to login
-        router.replace('/login')
-        return
-      }
-
-      // If Zustand already has this user loaded, skip
-      if (currentUser?.id === firebaseUser.uid) return
-
-      // Load profile from Firestore
-      const profile = await getUser(firebaseUser.uid)
-      if (!profile) {
-        await auth.signOut()
-        router.replace('/login')
-        return
-      }
-
-      const user = {
-        id: firebaseUser.uid,
-        email: profile.email,
-        name: profile.name,
-        role: profile.role,
-        avatar: profile.avatar,
-        companyId: profile.companyId,
-        departmentId: profile.departmentId,
-        createdAt: profile.createdAt.toDate(),
-        updatedAt: profile.updatedAt.toDate(),
-      }
-      setCurrentUser(user)
-      setNavigationItems(getRoleNavigationItems(profile.role) as any)
-    })
+    const unsubscribe = () => { };
+    // Bypass authentication by immediately setting a demo superadmin user.
+    const mockUser: any = {
+      id: "demo-admin-123",
+      email: "admin@example.com",
+      name: "Admin User",
+      role: "SUPERADMIN",
+      avatar: "",
+      companyId: "company-1",
+      departmentId: "dept-1",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    setCurrentUser(mockUser);
+    setNavigationItems(getRoleNavigationItems(mockUser.role) as any);
 
     return () => unsubscribe()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
