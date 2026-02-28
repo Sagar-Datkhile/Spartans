@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useAppStore } from '@/lib/store'
+import { EmployeeTaskModal } from './employee-task-modal'
 const mockTasks = [
   {
     id: '1',
@@ -139,50 +140,58 @@ export default function TaskList() {
         </Card>
       ))}
 
-      <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{selectedTask?.title}</DialogTitle>
-            <DialogDescription>Task Details</DialogDescription>
-          </DialogHeader>
-          {selectedTask && (
-            <div className="space-y-4 pt-4">
-              <div className="grid gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">Project:</span>
-                  <span className="text-sm">{selectedTask.project}</span>
+      {currentUser?.role === 'EMPLOYEE' ? (
+        <EmployeeTaskModal
+          task={selectedTask}
+          open={!!selectedTask}
+          onOpenChange={(open) => !open && setSelectedTask(null)}
+        />
+      ) : (
+        <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{selectedTask?.title}</DialogTitle>
+              <DialogDescription>Task Details</DialogDescription>
+            </DialogHeader>
+            {selectedTask && (
+              <div className="space-y-4 pt-4">
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">Project:</span>
+                    <span className="text-sm">{selectedTask.project}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">Assignee:</span>
+                    <span className="text-sm">{selectedTask.assignee}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">Due Date:</span>
+                    <span className="text-sm">{selectedTask.dueDate}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">Status:</span>
+                    <Badge variant="secondary" className={`${getStatusColor(selectedTask.status)} text-[11px] font-semibold px-2 py-0.5 border-none shadow-none`}>
+                      {selectedTask.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">Priority:</span>
+                    <Badge variant="outline" className={`${getPriorityColor(selectedTask.priority)} text-[10px] font-bold uppercase tracking-wider`}>
+                      {selectedTask.priority}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">Assignee:</span>
-                  <span className="text-sm">{selectedTask.assignee}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">Due Date:</span>
-                  <span className="text-sm">{selectedTask.dueDate}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">Status:</span>
-                  <Badge variant="secondary" className={`${getStatusColor(selectedTask.status)} text-[11px] font-semibold px-2 py-0.5 border-none shadow-none`}>
-                    {selectedTask.status.replace('_', ' ')}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">Priority:</span>
-                  <Badge variant="outline" className={`${getPriorityColor(selectedTask.priority)} text-[10px] font-bold uppercase tracking-wider`}>
-                    {selectedTask.priority}
-                  </Badge>
+                <div className="pt-4 border-t">
+                  <h4 className="font-semibold mb-2">Manager Notes:</h4>
+                  <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                    Please ensure to follow the brand guidelines while working on this task. Reach out if you need any resources or have questions.
+                  </p>
                 </div>
               </div>
-              <div className="pt-4 border-t">
-                <h4 className="font-semibold mb-2">Manager Notes:</h4>
-                <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                  Please ensure to follow the brand guidelines while working on this task. Reach out if you need any resources or have questions.
-                </p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }
