@@ -49,6 +49,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         return
       }
 
+      const path = window.location.pathname
+      if (path.startsWith('/dashboard/superadmin') && profile.role !== 'SUPERADMIN') {
+        router.replace('/unauthorized')
+        return
+      } else if (path.startsWith('/dashboard/manager') && profile.role !== 'MANAGER') {
+        router.replace('/unauthorized')
+        return
+      } else if (path.startsWith('/dashboard/employee') && profile.role !== 'EMPLOYEE') {
+        router.replace('/unauthorized')
+        return
+      }
+
       const user = {
         id: session.user.id,
         email: profile.email,

@@ -70,43 +70,7 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Role Switcher for Development */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="hidden sm:flex">
-              Switch Role
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => {
-              if (currentUser) {
-                useAppStore.setState({
-                  currentUser: { ...currentUser, role: 'SUPERADMIN' }
-                })
-              }
-            }}>
-              Super Admin
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              if (currentUser) {
-                useAppStore.setState({
-                  currentUser: { ...currentUser, role: 'MANAGER' }
-                })
-              }
-            }}>
-              Manager
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              if (currentUser) {
-                useAppStore.setState({
-                  currentUser: { ...currentUser, role: 'EMPLOYEE' }
-                })
-              }
-            }}>
-              Employee
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+
 
         <div className="hidden items-center gap-2 sm:flex">
           <span className={`rounded-full px-3 py-1 text-xs font-semibold text-white ${getRoleColor(currentUser?.role || '')}`}>

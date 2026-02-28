@@ -2,6 +2,10 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { Button } from '@/components/ui/button'
+import { UserPlus } from 'lucide-react'
+import { useState } from 'react'
+import CreateUserDialog from '@/components/features/users/create-user-dialog'
 
 const data = [
   { week: 'W1', completed: 12, pending: 8, overdue: 2 },
@@ -11,8 +15,18 @@ const data = [
 ]
 
 export default function ManagerDashboard() {
+  const [createUserOpen, setCreateUserOpen] = useState(false)
+
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">Manager Dashboard</h2>
+        <Button onClick={() => setCreateUserOpen(true)}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Create Employee
+        </Button>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -75,6 +89,11 @@ export default function ManagerDashboard() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      <CreateUserDialog
+        open={createUserOpen}
+        onOpenChange={setCreateUserOpen}
+      />
     </div>
   )
 }

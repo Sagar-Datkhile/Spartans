@@ -1,25 +1,29 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
-import { getDashboardLayout } from '@/lib/rbac'
-import AdminDashboard from '@/components/dashboard/admin-dashboard'
-import ManagerDashboard from '@/components/dashboard/manager-dashboard'
-import EmployeeDashboard from '@/components/dashboard/employee-dashboard'
+import { Loader2 } from 'lucide-react'
 
 export default function DashboardPage() {
   const { currentUser } = useAppStore()
+  const router = useRouter()
 
-  if (!currentUser) {
-    return <div>Loading...</div>
-  }
-
-  const dashboardLayout = getDashboardLayout(currentUser.role)
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === 'SUPERADMIN') {
+        router.replace('/dashboard/superadmin')
+      } else if (currentUser.role === 'MANAGER') {
+        router.replace('/dashboard/manager')
+      } else {
+        router.replace('/dashboard/employee')
+      }
+    }
+  }, [currentUser, router])
 
   return (
-    <div className="p-6">
-      {dashboardLayout === 'admin-dashboard' && <AdminDashboard />}
-      {dashboardLayout === 'manager-dashboard' && <ManagerDashboard />}
-      {dashboardLayout === 'employee-dashboard' && <EmployeeDashboard />}
+    <div className="flex h-full w-full items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
     </div>
   )
 }
