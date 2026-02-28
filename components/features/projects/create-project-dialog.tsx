@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,9 +14,10 @@ interface CreateProjectDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onProjectCreated?: () => void
+  projectToEdit?: any | null
 }
 
-export default function CreateProjectDialog({ open, onOpenChange, onProjectCreated }: CreateProjectDialogProps) {
+export default function CreateProjectDialog({ open, onOpenChange, onProjectCreated, projectToEdit }: CreateProjectDialogProps) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -27,6 +28,26 @@ export default function CreateProjectDialog({ open, onOpenChange, onProjectCreat
 
   const { currentUser } = useAppStore()
   const supabase = createClient()
+
+  useEffect(() => {
+    if (open) {
+      if (projectToEdit) {
+        setName(projectToEdit.name || '')
+        setDescription(projectToEdit.description || '')
+        setStartDate(projectToEdit.start_date ? new Date(projectToEdit.start_date).toISOString().split('T')[0] : '')
+        setEndDate(projectToEdit.end_date ? new Date(projectToEdit.end_date).toISOString().split('T')[0] : '')
+        setBudget(projectToEdit.budget ? projectToEdit.budget.toString() : '')
+        setError('')
+      } else {
+        setName('')
+        setDescription('')
+        setStartDate('')
+        setEndDate('')
+        setBudget('')
+        setError('')
+      }
+    }
+  }, [projectToEdit, open])
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -41,21 +62,33 @@ export default function CreateProjectDialog({ open, onOpenChange, onProjectCreat
     setError('')
     setLoading(true)
 
-    const { data, error: insertError } = await supabase.from('projects').insert({
+    const projectData = {
       company_id: currentUser.companyId,
       name,
       description,
       start_date: startDate ? new Date(startDate).toISOString() : null,
       end_date: endDate ? new Date(endDate).toISOString() : null,
       budget: budget ? parseFloat(budget) : null,
-      status: 'PLANNING',
-      manager_id: currentUser.id
-    })
+    }
+
+    let queryError = null;
+
+    if (projectToEdit) {
+      const { error } = await supabase.from('projects').update(projectData).eq('id', projectToEdit.id)
+      queryError = error
+    } else {
+      const { error } = await supabase.from('projects').insert({
+        ...projectData,
+        status: 'PLANNING',
+        manager_id: currentUser.id
+      })
+      queryError = error
+    }
 
     setLoading(false)
 
-    if (insertError) {
-      setError(insertError.message || 'Failed to create project')
+    if (queryError) {
+      setError(queryError.message || (projectToEdit ? 'Failed to update project' : 'Failed to create project'))
       return
     }
 
@@ -80,10 +113,10 @@ export default function CreateProjectDialog({ open, onOpenChange, onProjectCreat
               <div className="bg-primary/10 p-2 rounded-lg">
                 <FolderPlus className="h-5 w-5 text-primary" />
               </div>
-              <DialogTitle className="text-xl">Create New Project</DialogTitle>
+              <DialogTitle className="text-xl">{projectToEdit ? 'Edit Project' : 'Create New Project'}</DialogTitle>
             </div>
             <DialogDescription>
-              Add a new project to manage with your team. Fill out the details below.
+              {projectToEdit ? 'Update project details and information below.' : 'Add a new project to manage with your team. Fill out the details below.'}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -172,7 +205,7 @@ export default function CreateProjectDialog({ open, onOpenChange, onProjectCreat
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating...</> : 'Create Project'}
+            {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {projectToEdit ? 'Saving...' : 'Creating...'}</> : (projectToEdit ? 'Save Changes' : 'Create Project')}
           </Button>
         </DialogFooter>
       </DialogContent>

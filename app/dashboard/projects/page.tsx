@@ -11,9 +11,22 @@ import CreateProjectDialog from '@/components/features/projects/create-project-d
 export default function ProjectsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [projectToEdit, setProjectToEdit] = useState<any>(null)
 
   const handleProjectCreated = () => {
     setRefreshKey((prev) => prev + 1)
+  }
+
+  const handleEditProject = (project: any) => {
+    setProjectToEdit(project)
+    setIsCreateDialogOpen(true)
+  }
+
+  const handleDialogChange = (open: boolean) => {
+    setIsCreateDialogOpen(open)
+    if (!open) {
+      setTimeout(() => setProjectToEdit(null), 300)
+    }
   }
 
   return (
@@ -23,18 +36,19 @@ export default function ProjectsPage() {
           <h1 className="text-3xl font-bold">Projects</h1>
           <p className="text-muted-foreground">Manage and track your projects</p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
+        <Button onClick={() => { setProjectToEdit(null); setIsCreateDialogOpen(true); }}>
           <Plus className="mr-2 h-4 w-4" />
           New Project
         </Button>
       </div>
 
-      <ProjectList refreshKey={refreshKey} />
+      <ProjectList refreshKey={refreshKey} onEditProject={handleEditProject} />
 
       <CreateProjectDialog
         open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
+        onOpenChange={handleDialogChange}
         onProjectCreated={handleProjectCreated}
+        projectToEdit={projectToEdit}
       />
     </div>
   )

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { useAppStore } from '@/lib/store'
 import { Loader2 } from 'lucide-react'
+import ProjectDetailsDialog from './project-details-dialog'
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -24,9 +25,11 @@ const getStatusColor = (status: string) => {
   }
 }
 
-export default function ProjectList({ refreshKey }: { refreshKey?: number }) {
+export default function ProjectList({ refreshKey, onEditProject }: { refreshKey?: number, onEditProject?: (project: any) => void }) {
   const [projects, setProjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedProject, setSelectedProject] = useState<any>(null)
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const { currentUser } = useAppStore()
   const supabase = createClient()
 
@@ -64,6 +67,11 @@ export default function ProjectList({ refreshKey }: { refreshKey?: number }) {
         <p className="text-muted-foreground text-sm">Create a project to get started.</p>
       </div>
     )
+  }
+
+  const handleViewDetails = (project: any) => {
+    setSelectedProject(project)
+    setIsDetailsOpen(true)
   }
 
   return (
@@ -106,12 +114,18 @@ export default function ProjectList({ refreshKey }: { refreshKey?: number }) {
               <p className="font-semibold">{project.end_date || 'No Date'}</p>
             </div>
 
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full" onClick={() => handleViewDetails(project)}>
               View Details
             </Button>
           </CardContent>
         </Card>
       ))}
+      <ProjectDetailsDialog
+        project={selectedProject}
+        open={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+        onEditClick={() => onEditProject?.(selectedProject)}
+      />
     </div>
   )
 }
