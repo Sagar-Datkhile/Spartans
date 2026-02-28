@@ -2,7 +2,6 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Calendar, User, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
@@ -89,10 +88,6 @@ export default function TaskList() {
       {mockTasks.map((task) => (
         <Card key={task.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 transition-all hover:border-gray-400 hover:shadow-md">
           <div className="flex items-center gap-4 w-full sm:w-auto">
-            <Checkbox
-              defaultChecked={task.completed}
-              className="h-5 w-5 rounded-md"
-            />
             <div className="sm:hidden flex items-center gap-2">
               <Badge variant="secondary" className={`${getStatusColor(task.status)} border-none shadow-none`}>
                 <span className={`h-1.5 w-1.5 rounded-full mr-1.5 ${task.status === 'COMPLETED' ? 'bg-emerald-500' : task.status === 'IN_PROGRESS' ? 'bg-blue-500' : 'bg-slate-400'}`} />
