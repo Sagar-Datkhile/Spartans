@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Info } from 'lucide-react'
+import { useAppStore } from '@/lib/store'
 
 interface CreateTaskDialogProps {
   open: boolean
@@ -13,6 +16,8 @@ interface CreateTaskDialogProps {
 }
 
 export default function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) {
+  const { employees } = useAppStore()
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -65,13 +70,39 @@ export default function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialo
             <div>
               <Label>Assign To</Label>
               <Select>
-                <SelectTrigger>
+                <SelectTrigger className="h-10">
                   <SelectValue placeholder="Select assignee" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="john">John Doe</SelectItem>
-                  <SelectItem value="jane">Jane Smith</SelectItem>
-                  <SelectItem value="bob">Bob Wilson</SelectItem>
+                  {employees.filter(e => e.role === 'EMPLOYEE').map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{emp.name}</span>
+                        {emp.status && (
+                          <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                              <TooltipTrigger asChild>
+                                <span className="flex items-center justify-center p-0.5" tabIndex={-1}>
+                                  <Info className="h-4 w-4 text-muted-foreground/70 transition-colors" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="right">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xl leading-none">{emp.status.emoji}</span>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{emp.status.text}</span>
+                                    {emp.status.duration && (
+                                      <span className="text-xs text-muted-foreground">{emp.status.duration}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

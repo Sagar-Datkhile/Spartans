@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useAppStore } from '@/lib/store'
 import TaskList from '@/components/features/tasks/task-list'
 import CreateTaskDialog from '@/components/features/tasks/create-task-dialog'
 import { useAppStore } from '@/lib/store'

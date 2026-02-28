@@ -5,12 +5,23 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Calendar, User } from 'lucide-react'
-
+import { useState } from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { useAppStore } from '@/lib/store'
+import { EmployeeTaskModal } from './employee-task-modal'
 const mockTasks = [
   {
     id: '1',
     title: 'Design homepage mockup',
     project: 'Website Redesign',
+    description: 'Create a responsive homepage mockup following the brand guidelines. Ensure all assets are properly sliced and ready for development.',
     status: 'IN_PROGRESS',
     priority: 'HIGH',
     assignee: 'John Doe',
@@ -21,6 +32,7 @@ const mockTasks = [
     id: '2',
     title: 'Setup database schema',
     project: 'Mobile App',
+    description: 'Design and implement the initial database schema for the mobile application. Include tables for users, posts, and comments.',
     status: 'TODO',
     priority: 'HIGH',
     assignee: 'Jane Smith',
@@ -31,6 +43,7 @@ const mockTasks = [
     id: '3',
     title: 'API documentation',
     project: 'API Integration',
+    description: 'Document the REST APIs including request/response formats and authentication requirements.',
     status: 'COMPLETED',
     priority: 'MEDIUM',
     assignee: 'Bob Wilson',
@@ -68,6 +81,9 @@ const getPriorityColor = (priority: string) => {
 }
 
 export default function TaskList() {
+  const currentUser = useAppStore((state) => state.currentUser)
+  const [selectedTask, setSelectedTask] = useState<(typeof mockTasks)[0] | null>(null)
+
   return (
     <div className="grid gap-4">
       {mockTasks.map((task) => (
@@ -116,15 +132,83 @@ export default function TaskList() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <Button variant="outline" size="sm" className="hidden sm:inline-flex">
-              Details
-            </Button>
-            <Button size="sm" className="w-full sm:w-auto">
+            {currentUser?.role !== 'EMPLOYEE' && (
+              <Button variant="outline" size="sm" className="hidden sm:inline-flex">
+                Details
+              </Button>
+            )}
+            <Button size="sm" className="w-full sm:w-auto" onClick={() => setSelectedTask(task)}>
               View
             </Button>
           </div>
         </Card>
       ))}
+
+      {currentUser?.role === 'EMPLOYEE' ? (
+        <EmployeeTaskModal
+          task={selectedTask}
+          open={!!selectedTask}
+          onOpenChange={(open) => !open && setSelectedTask(null)}
+        />
+      ) : (
+        <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+            <DialogHeader className="p-6 pb-4 border-b shrink-0">
+              <DialogTitle className="text-xl">{selectedTask?.title}</DialogTitle>
+              <DialogDescription>Task Details Overview</DialogDescription>
+            </DialogHeader>
+            {selectedTask && (
+              <ScrollArea className="flex-1 px-6 py-4">
+                <div className="space-y-6">
+                  <div className="grid gap-4 bg-muted/30 p-4 rounded-lg border">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm text-muted-foreground">Project:</span>
+                      <span className="text-sm font-medium">{selectedTask.project}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm text-muted-foreground">Assignee:</span>
+                      <span className="text-sm font-medium">{selectedTask.assignee}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm text-muted-foreground">Due Date:</span>
+                      <span className="text-sm font-medium">{selectedTask.dueDate}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm text-muted-foreground">Status:</span>
+                      <Badge variant="secondary" className={`${getStatusColor(selectedTask.status)} text-[11px] font-semibold px-2 py-0.5 border-none shadow-none`}>
+                        {selectedTask.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm text-muted-foreground">Priority:</span>
+                      <Badge variant="outline" className={`${getPriorityColor(selectedTask.priority)} text-[10px] font-bold uppercase tracking-wider`}>
+                        {selectedTask.priority}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Task Description</h4>
+                    <Card className="border-blue-100 bg-blue-50/50 shadow-none">
+                      <CardContent className="p-4">
+                        <ScrollArea className="h-[150px] w-full rounded-md">
+                          <div className="text-sm text-blue-900 leading-relaxed pr-4">
+                            {selectedTask.description || "Please ensure to follow the brand guidelines while working on this task. Reach out if you need any resources or have questions."}
+                            {/* Adding dummy text to demonstrate scrollability if needed, though real descriptions will take up space */}
+                          </div>
+                        </ScrollArea>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
+            <div className="p-4 border-t flex justify-end shrink-0 bg-muted/20">
+              <Button onClick={() => setSelectedTask(null)}>Close</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }
