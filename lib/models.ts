@@ -19,6 +19,8 @@ export interface UserProfile {
   createdAt: Timestamp
   updatedAt: Timestamp
   createdBy: string // User ID of creator
+  skills?: string[]
+  baseCapacityHours?: number
 }
 
 export interface Company {
@@ -73,6 +75,7 @@ export interface Task {
   dueDate: Timestamp
   completedDate?: Timestamp
   estimatedHours?: number
+  requiredSkills?: string[]
   actualHours?: number
   dependencies: string[] // Task IDs
   attachments: string[] // File paths
