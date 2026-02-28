@@ -9,8 +9,6 @@ import { Users, Upload, Mail, Loader2, UserPlus } from 'lucide-react'
 import CreateUserDialog from './create-user-dialog'
 import BulkInviteDialog from './bulk-invite-dialog'
 import { useAppStore } from '@/lib/store'
-import { useFirestoreListener } from '@/lib/hooks/useFirestoreListener'
-import { where } from 'firebase/firestore'
 import { UserProfile } from '@/lib/models'
 
 const getRoleColor = (role: string) => {
@@ -35,10 +33,9 @@ export default function UserManagement() {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [bulkOpen, setBulkOpen] = useState(false)
 
-  // Live Firestore data filtered by company
-  const { data: users, loading } = useFirestoreListener<UserProfile>('users', [
-    where('companyId', '==', currentUser?.companyId || 'company-1'),
-  ])
+  // Mock setup instead of live firestore data for now
+  const users = useAppStore((state) => state.employees) || []
+  const loading = false
 
   const getInitials = (name: string) =>
     name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -105,8 +102,8 @@ export default function UserManagement() {
 
             <div className="flex items-center gap-2 flex-wrap justify-end">
               <Badge className={getRoleColor(user.role)}>{user.role}</Badge>
-              <Badge variant="secondary" className={getStatusStyle(user.status)}>
-                {user.status === 'pending' ? '⏳ Pending' : user.status === 'active' ? 'Active' : 'Inactive'}
+              <Badge variant="secondary" className={getStatusStyle('active')}>
+                Active
               </Badge>
               <Button variant="outline" size="sm">Edit</Button>
             </div>

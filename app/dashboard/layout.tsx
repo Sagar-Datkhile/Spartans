@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { onAuthStateChanged } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
-import { getUser } from '@/lib/services/firestore'
 import { useAppStore, useUIStore } from '@/lib/store'
 import { getRoleNavigationItems } from '@/lib/rbac'
 import Header from '@/components/dashboard/header'
@@ -20,46 +17,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     setMounted(true)
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      // Allow demo users to bypass Firebase Auth
-      const currentStoreUser = useAppStore.getState().currentUser
-      if (!firebaseUser) {
-        if (currentStoreUser?.id?.startsWith('demo-')) {
-          setNavigationItems(getRoleNavigationItems(currentStoreUser.role) as any)
-          return
-        }
-        // Not logged in and not a demo user — redirect to login
-        router.replace('/login')
-        return
-      }
+    const currentStoreUser = useAppStore.getState().currentUser
+    if (!currentStoreUser) {
+      router.replace('/login')
+      return
+    }
 
-      // If Zustand already has this user loaded, skip
-      if (currentUser?.id === firebaseUser.uid) return
-
-      // Load profile from Firestore
-      const profile = await getUser(firebaseUser.uid)
-      if (!profile) {
-        await auth.signOut()
-        router.replace('/login')
-        return
-      }
-
-      const user = {
-        id: firebaseUser.uid,
-        email: profile.email,
-        name: profile.name,
-        role: profile.role,
-        avatar: profile.avatar,
-        companyId: profile.companyId,
-        departmentId: profile.departmentId,
-        createdAt: profile.createdAt.toDate(),
-        updatedAt: profile.updatedAt.toDate(),
-      }
-      setCurrentUser(user)
-      setNavigationItems(getRoleNavigationItems(profile.role) as any)
-    })
-
-    return () => unsubscribe()
+    setNavigationItems(getRoleNavigationItems(currentStoreUser.role) as any)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {

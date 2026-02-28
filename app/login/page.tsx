@@ -2,9 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
-import { getUser } from '@/lib/services/firestore'
 import { useAppStore } from '@/lib/store'
 import { Loader2 } from 'lucide-react'
 
@@ -70,64 +67,17 @@ export default function LoginPage() {
         setLoading(true)
 
         // Bypass logic for development
-        if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY || email.includes('dev')) {
-            const roleToUse = (role as any) || 'SUPERADMIN'
-            setCurrentUser({
-                id: 'dev-user-id',
-                email: email || `${roleToUse.toLowerCase()}@example.com`,
-                name: `Demo ${roleToUse}`,
-                role: roleToUse,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            })
-            router.push('/dashboard')
-            return
-        }
-
-        try {
-            const credential = await signInWithEmailAndPassword(auth, email, password)
-            const profile = await getUser(credential.user.uid)
-
-            if (!profile) {
-                setError('Account profile not found. Contact your administrator.')
-                await auth.signOut()
-                return
-            }
-
-            setCurrentUser({
-                id: credential.user.uid,
-                email: profile.email,
-                name: profile.name,
-                role: profile.role,
-                avatar: profile.avatar,
-                companyId: profile.companyId,
-                departmentId: profile.departmentId,
-                createdAt: profile.createdAt.toDate(),
-                updatedAt: profile.updatedAt.toDate(),
-            })
-
-            if (profile.status === 'pending') {
-                const { updateUser } = await import('@/lib/services/firestore')
-                await updateUser(credential.user.uid, { status: 'active' })
-            }
-
-            router.push('/dashboard')
-        } catch (err: any) {
-            console.error('Login error:', err)
-            if (
-                err.code === 'auth/invalid-credential' ||
-                err.code === 'auth/wrong-password' ||
-                err.code === 'auth/user-not-found'
-            ) {
-                setError('Invalid email or password. Please try again.')
-            } else if (err.code === 'auth/too-many-requests') {
-                setError('Too many attempts. Please try again later.')
-            } else {
-                setError('Sign in failed. Possible configuration issue.')
-            }
-        } finally {
-            setLoading(false)
-        }
+        const roleToUse = (role as any) || 'SUPERADMIN'
+        setCurrentUser({
+            id: 'dev-user-id',
+            email: email || `${roleToUse.toLowerCase()}@example.com`,
+            name: `Demo ${roleToUse}`,
+            role: roleToUse,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        })
+        router.push('/dashboard')
+        setLoading(false)
     }
 
     return (
@@ -235,7 +185,7 @@ export default function LoginPage() {
                                 placeholder="you@company.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                required={!!process.env.NEXT_PUBLIC_FIREBASE_API_KEY}
+                                required
                                 className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition"
                             />
                         </div>
@@ -258,7 +208,7 @@ export default function LoginPage() {
                                 placeholder="Enter your password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                required={!!process.env.NEXT_PUBLIC_FIREBASE_API_KEY}
+                                required
                                 className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition"
                             />
                         </div>
