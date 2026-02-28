@@ -65,8 +65,8 @@ export default function Header() {
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => {
               if (currentUser) {
-                useAppStore.setState({ 
-                  currentUser: { ...currentUser, role: 'SUPERADMIN' } 
+                useAppStore.setState({
+                  currentUser: { ...currentUser, role: 'SUPERADMIN' }
                 })
               }
             }}>
@@ -74,8 +74,8 @@ export default function Header() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => {
               if (currentUser) {
-                useAppStore.setState({ 
-                  currentUser: { ...currentUser, role: 'MANAGER' } 
+                useAppStore.setState({
+                  currentUser: { ...currentUser, role: 'MANAGER' }
                 })
               }
             }}>
@@ -83,8 +83,8 @@ export default function Header() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => {
               if (currentUser) {
-                useAppStore.setState({ 
-                  currentUser: { ...currentUser, role: 'EMPLOYEE' } 
+                useAppStore.setState({
+                  currentUser: { ...currentUser, role: 'EMPLOYEE' }
                 })
               }
             }}>
