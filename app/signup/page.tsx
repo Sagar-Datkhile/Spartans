@@ -47,17 +47,13 @@ export default function SignupPage() {
                 throw new Error('Signup successful, but failed to automatically log in.')
             }
 
-            // Fetch profile data to load globally
-            const { data: profile, error: profileError } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', authData.user.id)
-                .single()
-
-            if (profileError || !profile) {
+            // Fetch profile data to load globally via server-route to bypass RLS
+            const profileRes = await fetch('/api/users/me');
+            if (!profileRes.ok) {
                 await supabase.auth.signOut()
                 throw new Error('Account profile not found after signup.')
             }
+            const { profile } = await profileRes.json();
 
             setCurrentUser({
                 id: authData.user.id,
