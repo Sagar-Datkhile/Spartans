@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
-import { Calendar, User } from 'lucide-react'
+import { Calendar, User, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 import {
   Dialog,
@@ -132,11 +132,6 @@ export default function TaskList() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            {currentUser?.role !== 'EMPLOYEE' && (
-              <Button variant="outline" size="sm" className="hidden sm:inline-flex">
-                Details
-              </Button>
-            )}
             <Button size="sm" className="w-full sm:w-auto" onClick={() => setSelectedTask(task)}>
               View
             </Button>
@@ -158,7 +153,7 @@ export default function TaskList() {
               <DialogDescription>Task Details Overview</DialogDescription>
             </DialogHeader>
             {selectedTask && (
-              <ScrollArea className="flex-1 px-6 py-4">
+              <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
                 <div className="space-y-6">
                   <div className="grid gap-4 bg-muted/30 p-4 rounded-lg border">
                     <div className="flex items-center justify-between">
@@ -189,19 +184,24 @@ export default function TaskList() {
 
                   <div className="space-y-3">
                     <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Task Description</h4>
-                    <Card className="border-blue-100 bg-blue-50/50 shadow-none">
-                      <CardContent className="p-4">
-                        <ScrollArea className="h-[150px] w-full rounded-md">
-                          <div className="text-sm text-blue-900 leading-relaxed pr-4">
-                            {selectedTask.description || "Please ensure to follow the brand guidelines while working on this task. Reach out if you need any resources or have questions."}
-                            {/* Adding dummy text to demonstrate scrollability if needed, though real descriptions will take up space */}
+                    <Card className="shadow-sm border-slate-200 bg-slate-50/50">
+                      <CardContent className="p-5 overflow-y-auto max-h-[250px] custom-scrollbar">
+                        <div className="flex items-start gap-4">
+                          <div className="bg-blue-100/50 p-2.5 rounded-lg shrink-0 mt-0.5 border border-blue-100">
+                            <AlertCircle className="w-5 h-5 text-blue-600" />
                           </div>
-                        </ScrollArea>
+                          <div className="space-y-2.5 flex-1">
+                            <h4 className="font-semibold text-foreground text-base tracking-tight">{selectedTask.title}</h4>
+                            <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                              {selectedTask.description || "Please ensure to follow the brand guidelines while working on this task. Reach out if you need any resources or have questions. Ensure pixel-perfect margins!"}
+                            </p>
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
                 </div>
-              </ScrollArea>
+              </div>
             )}
             <div className="p-4 border-t flex justify-end shrink-0 bg-muted/20">
               <Button onClick={() => setSelectedTask(null)}>Close</Button>
