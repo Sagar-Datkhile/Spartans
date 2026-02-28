@@ -42,6 +42,7 @@ export async function POST(req: Request) {
                 email,
                 name,
                 company_id: companyData.id,
+                company_name: companyName,
                 role: 'SUPERADMIN',
                 status: 'active'
             })

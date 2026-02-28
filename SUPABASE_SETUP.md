@@ -44,6 +44,7 @@ CREATE TABLE users (
   role user_role DEFAULT 'EMPLOYEE',
   avatar_url TEXT,
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+  company_name TEXT,
   phone TEXT,
   status account_status DEFAULT 'pending',
   created_by UUID REFERENCES users(id), -- Self referencing for inviter

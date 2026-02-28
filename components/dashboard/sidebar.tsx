@@ -11,6 +11,7 @@ export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { navigationItems, sidebarOpen } = useUIStore()
+  const { currentUser } = useAppStore()
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -55,10 +56,12 @@ export default function Sidebar() {
         {/* Logo */}
         <div className="flex items-center justify-between border-b border-sidebar-border px-6 py-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-bold">
-              D
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-bold uppercase">
+              {currentUser?.companyName ? currentUser.companyName.charAt(0) : 'D'}
             </div>
-            <span className="text-lg font-bold text-sidebar-foreground">Dashboard</span>
+            <span className="text-lg font-bold text-sidebar-foreground truncate max-w-[150px]" title={currentUser?.companyName || 'Dashboard'}>
+              {currentUser?.companyName || 'Dashboard'}
+            </span>
           </Link>
         </div>
 
