@@ -17,9 +17,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, Calendar, Clock, Paperclip, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
+import { AlertCircle, Calendar, Clock, Paperclip, CheckCircle2 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ScrollArea } from '@/components/ui/scroll-area'
 
 export function EmployeeTaskModal({
     task,
@@ -35,7 +34,6 @@ export function EmployeeTaskModal({
     const [notes, setNotes] = useState('')
     const [timeSpent, setTimeSpent] = useState('')
     const [showReview, setShowReview] = useState(false)
-    const [managerNotesOpen, setManagerNotesOpen] = useState(true)
 
     // Checklist states
     const [checklist, setChecklist] = useState({
@@ -81,11 +79,9 @@ export function EmployeeTaskModal({
         checklist.selfReview
 
     const submitCompletion = () => {
-        if (isReviewValid) {
-            setStatus('COMPLETED')
-            setShowReview(false)
-            onOpenChange(false) // Close modal or show success
-        }
+        setStatus('COMPLETED')
+        setShowReview(false)
+        onOpenChange(false) // Close modal or show success
     }
 
     if (!task) return null
@@ -108,7 +104,7 @@ export function EmployeeTaskModal({
                     </DialogDescription>
                 </DialogHeader>
 
-                <ScrollArea className="flex-1 px-6 py-4">
+                <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
                     <div className="space-y-8">
                         {showReview ? (
                             <div className="space-y-6">
@@ -170,9 +166,9 @@ export function EmployeeTaskModal({
 
                                 <div className="flex justify-end gap-3 pt-4 border-t">
                                     <Button variant="outline" onClick={() => setShowReview(false)}>Edit Again</Button>
-                                    <Button onClick={submitCompletion} disabled={!isReviewValid} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                                    <Button onClick={submitCompletion} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                                         <CheckCircle2 className="w-4 h-4 mr-2" />
-                                        Confirm & Complete
+                                        Submit
                                     </Button>
                                 </div>
                             </div>
@@ -205,29 +201,22 @@ export function EmployeeTaskModal({
                                 </section>
 
                                 {/* Task Description */}
-                                {/* Task Description */}
                                 <div className="space-y-3 pt-2">
                                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Task Description</h3>
-                                    <Card className="border-blue-100 bg-blue-50/50 shadow-none overflow-hidden">
-                                        <div
-                                            className="flex justify-between items-center p-4 cursor-pointer hover:bg-blue-50/80 transition-colors border-b border-blue-100/50"
-                                            onClick={() => setManagerNotesOpen(!managerNotesOpen)}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <AlertCircle className="w-4 h-4 text-blue-600" />
-                                                <h3 className="font-semibold text-blue-900 text-sm">{task.title}</h3>
-                                            </div>
-                                            {managerNotesOpen ? <ChevronUp className="w-4 h-4 text-blue-500" /> : <ChevronDown className="w-4 h-4 text-blue-500" />}
-                                        </div>
-                                        {managerNotesOpen && (
-                                            <CardContent className="p-0">
-                                                <ScrollArea className="max-h-[200px] w-full">
-                                                    <div className="p-4 text-sm text-blue-900 leading-relaxed">
+                                    <Card className="shadow-sm border-slate-200 bg-slate-50/50">
+                                        <CardContent className="p-5">
+                                            <div className="flex items-start gap-4">
+                                                <div className="bg-blue-100/50 p-2.5 rounded-lg shrink-0 mt-0.5 border border-blue-100">
+                                                    <AlertCircle className="w-5 h-5 text-blue-600" />
+                                                </div>
+                                                <div className="space-y-2.5 flex-1">
+                                                    <h4 className="font-semibold text-foreground text-base tracking-tight">{task.title}</h4>
+                                                    <p className="text-sm text-slate-600 leading-relaxed font-medium">
                                                         {task.description || "Please ensure to follow the brand guidelines while working on this task. Reach out if you need any resources or have questions. Ensure pixel-perfect margins!"}
-                                                    </div>
-                                                </ScrollArea>
-                                            </CardContent>
-                                        )}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </CardContent>
                                     </Card>
                                 </div>
 
@@ -304,7 +293,7 @@ export function EmployeeTaskModal({
                             </>
                         )}
                     </div>
-                </ScrollArea>
+                </div>
 
                 {!showReview && (
                     <div className="p-4 border-t flex justify-end gap-3 shrink-0 bg-muted/20">
