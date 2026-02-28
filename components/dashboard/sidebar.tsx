@@ -106,13 +106,6 @@ export default function Sidebar() {
               Check our documentation for guides and support.
             </p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-500 hover:bg-sidebar-accent transition-colors"
-          >
-            <Icons.LogOut className="h-5 w-5" />
-            <span>Logout</span>
-          </button>
         </div>
       </aside>
     </>
