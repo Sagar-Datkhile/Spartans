@@ -1,3 +1,4 @@
 ﻿# Spartans
 
-this is Spartans
+Welcome to Spartans
+
