@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import {
   collection,
   query,
-  where,
   onSnapshot,
-  Query,
   QueryConstraint,
   DocumentData,
+  QuerySnapshot,
+  FirestoreError,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 
@@ -32,7 +32,7 @@ export function useFirestoreListener<T extends DocumentData>(
 
       const unsubscribe = onSnapshot(
         q as any,
-        (snapshot) => {
+        (snapshot: QuerySnapshot<DocumentData>) => {
           const docs: T[] = []
           snapshot.forEach((doc) => {
             docs.push(doc.data() as T)
@@ -41,8 +41,8 @@ export function useFirestoreListener<T extends DocumentData>(
           setLoading(false)
           setError(null)
         },
-        (error) => {
-          setError(error.message)
+        (err: FirestoreError) => {
+          setError(err.message)
           setLoading(false)
         }
       )

@@ -15,7 +15,7 @@ export interface UserProfile {
   companyId: string
   departmentId?: string
   phone?: string
-  status: 'active' | 'inactive'
+  status: 'active' | 'inactive' | 'pending'
   createdAt: Timestamp
   updatedAt: Timestamp
   createdBy: string // User ID of creator
