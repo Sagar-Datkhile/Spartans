@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useAppStore } from '@/lib/store'
 import { KPIScore, getStatusColor, getStatusBarColor } from '@/lib/services/kpi'
 import KPIScoreCard from '@/components/features/kpi/kpi-score-card'
@@ -96,6 +96,27 @@ export default function ManagerKPIPage() {
         Pending: kpis.filter(k => k.actual_value == null).length,
     }
 
+    // Calculate Leaderboard
+    const leaderboard = useMemo(() => {
+        const aggregation: Record<string, { totalScore: number; count: number }> = {}
+        kpis.forEach(k => {
+            if (k.score != null) {
+                const name = k.employee_name || 'Anonymous'
+                if (!aggregation[name]) aggregation[name] = { totalScore: 0, count: 0 }
+                aggregation[name].totalScore += k.score
+                aggregation[name].count += 1
+            }
+        })
+
+        return Object.entries(aggregation)
+            .map(([name, data]) => ({
+                name,
+                avgScore: Math.round(data.totalScore / data.count * 10) / 10
+            }))
+            .sort((a, b) => b.avgScore - a.avgScore)
+            .slice(0, 3) // Top 3 for summary
+    }, [kpis])
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -127,49 +148,70 @@ export default function ManagerKPIPage() {
                 </Card>
             )}
 
-            {/* Summary cards */}
-            <div className="grid gap-4 md:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Team Avg Score</CardTitle>
-                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold">{avgScore != null ? `${avgScore}%` : '—'}</div>
-                        <p className="text-xs text-muted-foreground">{scored.length} evaluated KPIs</p>
-                    </CardContent>
-                </Card>
+            {/* Summary cards & Leaderboard */}
+            <div className="grid gap-6 lg:grid-cols-4">
+                <div className="lg:col-span-3 grid gap-4 md:grid-cols-3">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Team Avg Score</CardTitle>
+                            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold">{avgScore != null ? `${avgScore}%` : '—'}</div>
+                            <p className="text-xs text-muted-foreground">{scored.length} evaluated KPIs</p>
+                        </CardContent>
+                    </Card>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Excellent</CardTitle>
-                        <Award className="h-4 w-4 text-emerald-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-emerald-600">{statuses.Excellent}</div>
-                        <p className="text-xs text-muted-foreground">Score ≥ 90%</p>
-                    </CardContent>
-                </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Excellent</CardTitle>
+                            <Award className="h-4 w-4 text-emerald-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-emerald-600">{statuses.Excellent}</div>
+                            <p className="text-xs text-muted-foreground">Score ≥ 90%</p>
+                        </CardContent>
+                    </Card>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total KPIs</CardTitle>
-                        <Target className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold">{kpis.length}</div>
-                        <p className="text-xs text-muted-foreground">{statuses.Pending} pending</p>
-                    </CardContent>
-                </Card>
+                    <Card className="md:hidden lg:block">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                            <PenLine className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-amber-600">{statuses.Pending}</div>
+                            <p className="text-xs text-muted-foreground">Awaiting submission</p>
+                        </CardContent>
+                    </Card>
+                </div>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Needs Improvement</CardTitle>
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
+                {/* mini leaderboard */}
+                <Card className="bg-primary/5 border-primary/10">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                            <Award className="h-3 w-3" />
+                            Top Performers
+                        </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-red-600">{statuses['Needs Improvement']}</div>
-                        <p className="text-xs text-muted-foreground">Score &lt; 60%</p>
+                    <CardContent className="space-y-3">
+                        {leaderboard.length === 0 ? (
+                            <p className="text-[10px] text-muted-foreground italic py-2">No scores data available.</p>
+                        ) : (
+                            leaderboard.map((item: { name: string; avgScore: number }, idx: number) => (
+                                <div key={item.name} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-amber-100 text-amber-700' :
+                                            idx === 1 ? 'bg-slate-100 text-slate-700' :
+                                                'bg-orange-100 text-orange-700'
+                                            }`}>
+                                            {idx + 1}
+                                        </div>
+                                        <span className="text-xs font-medium truncate">{item.name}</span>
+                                    </div>
+                                    <span className="text-xs font-bold text-primary">{item.avgScore}%</span>
+                                </div>
+                            ))
+                        )}
                     </CardContent>
                 </Card>
             </div>

@@ -2,7 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { calculateKPIScore, getKPIStatus, KPIScore } from '@/lib/services/kpi'
 
 // In-memory mock database for KPIs
-let mockKPIs: KPIScore[] = []
+let mockKPIs: KPIScore[] = [
+    {
+        id: '1', employee_id: 'emp1', manager_id: 'mgr1', employee_name: 'Spartans Code', metric_name: 'Project Completion',
+        target_value: 100, actual_value: 95, score: 95, status: 'Excellent', period: '2026-03', created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+    },
+    {
+        id: '2', employee_id: 'emp1', manager_id: 'mgr1', employee_name: 'Spartans Code', metric_name: 'Code Review Quality',
+        target_value: 80, actual_value: 70, score: 87.5, status: 'Good', period: '2026-03', created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+    },
+    {
+        id: '3', employee_id: 'emp2', manager_id: 'mgr1', employee_name: 'Alex Johnson', metric_name: 'Documentation',
+        target_value: 10, actual_value: 9, score: 90, status: 'Excellent', period: '2026-03', created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+    },
+    {
+        id: '4', employee_id: 'emp3', manager_id: 'mgr1', employee_name: 'Sarah Chen', metric_name: 'Bug Fix Rate',
+        target_value: 50, actual_value: 46, score: 92, status: 'Excellent', period: '2026-03', created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+    }
+]
 
 function generateId() {
     return Math.random().toString(36).substring(2, 15)
@@ -21,8 +38,27 @@ export async function GET(req: NextRequest) {
             results = results.filter(k => k.employee_id === employeeId)
         } else if (managerId) {
             results = results.filter(k => k.manager_id === managerId)
+        } else if (searchParams.get('leaderboard')) {
+            // Aggregate by employee
+            const aggregation: Record<string, { totalScore: number; count: number }> = {}
+            results.forEach(k => {
+                if (k.score != null) {
+                    const name = k.employee_name || 'Anonymous'
+                    if (!aggregation[name]) aggregation[name] = { totalScore: 0, count: 0 }
+                    aggregation[name].totalScore += k.score
+                    aggregation[name].count += 1
+                }
+            })
+
+            const leaderboard = Object.entries(aggregation).map(([name, data]) => ({
+                employee_name: name,
+                avgScore: Math.round(data.totalScore / data.count * 10) / 10
+            }))
+
+            leaderboard.sort((a, b) => b.avgScore - a.avgScore)
+            return NextResponse.json(leaderboard.slice(0, 5)) // Top 5
         } else {
-            return NextResponse.json({ error: 'Provide employee_id or manager_id' }, { status: 400 })
+            return NextResponse.json({ error: 'Provide employee_id, manager_id or leaderboard=true' }, { status: 400 })
         }
 
         // Sort by created_at descending
