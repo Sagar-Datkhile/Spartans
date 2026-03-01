@@ -61,21 +61,19 @@ export default function ChatInterface() {
 
   // ── 1. Fetch sidebar data when user is ready ────────────────────────────────
   useEffect(() => {
-    if (!currentUser?.companyId) return
+    if (!currentUser?.id) return
 
     async function loadSidebar() {
-      // Real projects from DB
+      // Load all projects (no company filter — all users are separate companies currently)
       const { data: projs } = await supabase
         .from('projects')
         .select('id, name')
-        .eq('company_id', currentUser!.companyId!)
         .order('name')
 
-      // Real users from DB (exclude self)
+      // Load all users except self
       const { data: users } = await supabase
         .from('users')
         .select('id, name, role')
-        .eq('company_id', currentUser!.companyId!)
         .neq('id', currentUser!.id)
 
       if (projs) setProjects(projs)
@@ -83,7 +81,7 @@ export default function ChatInterface() {
     }
 
     loadSidebar()
-  }, [currentUser?.companyId])
+  }, [currentUser?.id])
 
   // ── 2. Load message history + subscribe to Realtime on channel switch ────────
   const switchChannel = useCallback(async (chat: ActiveChat) => {
@@ -102,21 +100,13 @@ export default function ChatInterface() {
         ? (chat.id === 'all' ? 'channel:all' : projectChannelId(chat.id))
         : dmChannelId(currentUser!.id, chat.id)
 
-    // Fetch history (last 50 messages)
-    const { data: history } = await supabase
-      .from('messages')
-      .select('*, users!messages_sender_id_fkey(name)')
-      .eq('channel_id', channelId)
-      .order('created_at', { ascending: true })
-      .limit(50)
-
-    if (history) {
-      setMessages(
-        history.map((m: any) => ({
-          ...m,
-          sender_name: m.users?.name ?? 'Unknown',
-        }))
-      )
+    // Load history via server API (bypasses RLS auth timing issues)
+    const res = await fetch(`/api/chat/messages?channel_id=${encodeURIComponent(channelId)}`)
+    if (res.ok) {
+      const data = await res.json()
+      setMessages(data.messages ?? [])
+    } else {
+      console.error('Failed to load messages:', await res.text())
     }
 
     setLoading(false)
@@ -173,21 +163,32 @@ export default function ChatInterface() {
         ? (activeChat.id === 'all' ? 'channel:all' : projectChannelId(activeChat.id))
         : dmChannelId(currentUser.id, activeChat.id)
 
-    setSending(true)
+    // Optimistically add to UI immediately so sender sees it right away
+    const optimisticMsg: Message = {
+      id: `temp-${Date.now()}`,
+      channel_id: channelId,
+      sender_id: currentUser.id,
+      content: text,
+      created_at: new Date().toISOString(),
+      sender_name: currentUser.name,
+    }
+    setMessages(prev => [...prev, optimisticMsg])
     setMessage('')
 
+    setSending(true)
     const { error } = await supabase.from('messages').insert({
       channel_id: channelId,
       sender_id: currentUser.id,
       content: text,
     })
+    setSending(false)
 
     if (error) {
       console.error('Failed to send message:', error)
-      setMessage(text) // restore on failure
+      // Remove the optimistic message on failure
+      setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id))
+      setMessage(text) // restore text
     }
-
-    setSending(false)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -427,8 +428,8 @@ export default function ChatInterface() {
                 onClick={handleSend}
                 disabled={!message.trim() || sending}
                 className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${message.trim() && !sending
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-transparent text-gray-400 cursor-not-allowed'
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-transparent text-gray-400 cursor-not-allowed'
                   }`}
               >
                 {sending
