@@ -4,32 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
-const mockAssets = [
-  {
-    id: '1',
-    name: 'Dell Laptop',
-    type: 'Hardware',
-    status: 'IN_USE',
-    currentUser: 'John Doe',
-    value: '$1,200',
-  },
-  {
-    id: '2',
-    name: 'Office Chair',
-    type: 'Furniture',
-    status: 'IN_USE',
-    currentUser: 'Jane Smith',
-    value: '$400',
-  },
-  {
-    id: '3',
-    name: 'Monitor',
-    type: 'Hardware',
-    status: 'AVAILABLE',
-    currentUser: null,
-    value: '$350',
-  },
-]
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useAppStore } from '@/lib/store'
+import { Loader2 } from 'lucide-react'
+import ManageAssetDialog from './manage-asset-dialog'
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -46,14 +25,66 @@ const getStatusColor = (status: string) => {
   }
 }
 
-export default function AssetList() {
+export default function AssetList({ refreshKey }: { refreshKey?: number }) {
+  const { currentUser } = useAppStore()
+  const [assets, setAssets] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const [manageDialogOpen, setManageDialogOpen] = useState(false)
+  const [selectedAsset, setSelectedAsset] = useState<any>(null)
+
+  const fetchAssets = async () => {
+    if (!currentUser?.companyId) return
+    setLoading(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('assets')
+      .select(`
+        *,
+        users!assets_current_user_id_fkey ( name )
+      `)
+      .eq('company_id', currentUser.companyId)
+      .order('created_at', { ascending: false })
+
+    if (data) {
+      setAssets(data)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    fetchAssets()
+  }, [currentUser?.companyId, refreshKey])
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (assets.length === 0) {
+    return (
+      <div className="text-center py-12 border rounded-lg bg-card/50 border-dashed">
+        <h3 className="text-lg font-medium text-foreground mb-1">No assets found</h3>
+        <p className="text-muted-foreground text-sm">Add a new asset to your directory.</p>
+      </div>
+    )
+  }
+
+  const handleManage = (asset: any) => {
+    setSelectedAsset(asset)
+    setManageDialogOpen(true)
+  }
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {mockAssets.map((asset) => (
-        <Card key={asset.id}>
+      {assets.map((asset) => (
+        <Card key={asset.id} className="transition-all hover:border-blue-400 hover:shadow-md">
           <CardHeader>
             <div className="flex items-start justify-between">
-              <CardTitle className="text-lg">{asset.name}</CardTitle>
+              <CardTitle className="text-lg pr-3 leading-tight">{asset.name}</CardTitle>
               <Badge className={getStatusColor(asset.status)}>
                 {asset.status.replace('_', ' ')}
               </Badge>
@@ -61,28 +92,42 @@ export default function AssetList() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <p className="text-sm text-muted-foreground">Type</p>
+              <p className="text-xs text-muted-foreground">Type</p>
               <p className="font-semibold">{asset.type}</p>
             </div>
 
-            {asset.currentUser && (
+            {asset.users?.name && (
               <div>
-                <p className="text-sm text-muted-foreground">Current User</p>
-                <p className="font-semibold">{asset.currentUser}</p>
+                <p className="text-xs text-muted-foreground">Current User</p>
+                <div className="font-semibold text-blue-600 bg-blue-50 w-fit px-2 rounded mt-1">
+                  {asset.users.name}
+                </div>
               </div>
             )}
 
             <div>
-              <p className="text-sm text-muted-foreground">Value</p>
-              <p className="font-semibold">{asset.value}</p>
+              <p className="text-xs text-muted-foreground">Value</p>
+              <p className="font-semibold">${Number(asset.value || 0).toLocaleString()}</p>
             </div>
 
-            <Button variant="outline" className="w-full">
-              Manage
+            <Button variant="outline" className="w-full mt-2" onClick={() => handleManage(asset)}>
+              Manage / Assign
             </Button>
           </CardContent>
         </Card>
       ))}
+
+      {selectedAsset && (
+        <ManageAssetDialog
+          open={manageDialogOpen}
+          asset={selectedAsset}
+          onOpenChange={setManageDialogOpen}
+          onSuccess={() => {
+            setManageDialogOpen(false)
+            fetchAssets()
+          }}
+        />
+      )}
     </div>
   )
 }
