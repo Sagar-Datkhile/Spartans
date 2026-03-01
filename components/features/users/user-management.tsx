@@ -10,6 +10,8 @@ import CreateUserDialog from './create-user-dialog'
 import BulkInviteDialog from './bulk-invite-dialog'
 import { useAppStore } from '@/lib/store'
 import { UserProfile } from '@/lib/models'
+import { useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 const getRoleColor = (role: string) => {
   switch (role) {
@@ -33,12 +35,38 @@ export default function UserManagement() {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [bulkOpen, setBulkOpen] = useState(false)
 
-  // Mock setup instead of live firestore data for now
-  const users = useAppStore((state) => state.employees) || []
-  const loading = false
+  const [users, setUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const getInitials = (name: string) =>
-    name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+  const fetchUsers = async () => {
+    if (!currentUser?.companyId) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('company_id', currentUser.companyId)
+      .order('created_at', { ascending: false })
+
+    if (!error && data) {
+      setUsers(data)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    fetchUsers()
+  }, [currentUser?.companyId])
+
+  // Mock setup instead of live firestore data for now
+
+  const getInitials = (name?: string) => {
+    if (!name) return '?'
+    return name.split(' ').map((n) => n[0]).filter(Boolean).join('').toUpperCase().slice(0, 2)
+  }
 
   return (
     <div className="space-y-4">
@@ -102,8 +130,8 @@ export default function UserManagement() {
 
             <div className="flex items-center gap-2 flex-wrap justify-end">
               <Badge className={getRoleColor(user.role)}>{user.role}</Badge>
-              <Badge variant="secondary" className={getStatusStyle('active')}>
-                Active
+              <Badge variant="secondary" className={getStatusStyle(user.status || 'active')}>
+                {user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Active'}
               </Badge>
               <Button variant="outline" size="sm">Edit</Button>
             </div>
@@ -115,12 +143,18 @@ export default function UserManagement() {
       <CreateUserDialog
         open={inviteOpen}
         onOpenChange={setInviteOpen}
-        onSuccess={() => setInviteOpen(false)}
+        onSuccess={() => {
+          setInviteOpen(false)
+          fetchUsers()
+        }}
       />
       <BulkInviteDialog
         open={bulkOpen}
         onOpenChange={setBulkOpen}
-        onSuccess={() => setBulkOpen(false)}
+        onSuccess={() => {
+          setBulkOpen(false)
+          fetchUsers()
+        }}
       />
     </div>
   )
