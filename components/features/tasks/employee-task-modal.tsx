@@ -19,21 +19,28 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, Calendar, Clock, Paperclip, CheckCircle2 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 
 export function EmployeeTaskModal({
     task,
     open,
-    onOpenChange
+    onOpenChange,
+    onTaskUpdated
 }: {
     task: any
     open: boolean
     onOpenChange: (open: boolean) => void
+    onTaskUpdated?: () => void
 }) {
     const [progress, setProgress] = useState([task?.completed ? 100 : 0])
     const [status, setStatus] = useState(task?.status || 'TODO')
     const [notes, setNotes] = useState('')
     const [timeSpent, setTimeSpent] = useState('')
     const [showReview, setShowReview] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
+
+    const supabase = createClient()
 
     // Checklist states
     const [checklist, setChecklist] = useState({
@@ -78,10 +85,45 @@ export function EmployeeTaskModal({
         checklist.managerNotes &&
         checklist.selfReview
 
+    const handleSaveProgress = async (isCompleted = false) => {
+        setIsSaving(true)
+
+        const finalStatus = isCompleted ? 'COMPLETED' : status
+
+        const updateData: any = {
+            status: finalStatus,
+            actual_hours: timeSpent ? Number(timeSpent) : null,
+        }
+
+        if (finalStatus === 'COMPLETED') {
+            updateData.completed_date = new Date().toISOString()
+        }
+
+        const { error } = await supabase
+            .from('tasks')
+            .update(updateData)
+            .eq('id', task.id)
+
+        setIsSaving(false)
+
+        if (error) {
+            toast.error('Failed to update task')
+            console.error(error)
+            return
+        }
+
+        toast.success(isCompleted ? 'Task marked as completed successfully!' : 'Task updated successfully!')
+        onTaskUpdated?.()
+
+        if (isCompleted) {
+            setShowReview(false)
+        }
+
+        onOpenChange(false)
+    }
+
     const submitCompletion = () => {
-        setStatus('COMPLETED')
-        setShowReview(false)
-        onOpenChange(false) // Close modal or show success
+        handleSaveProgress(true)
     }
 
     if (!task) return null
@@ -165,10 +207,10 @@ export function EmployeeTaskModal({
                                 </div>
 
                                 <div className="flex justify-end gap-3 pt-4 border-t">
-                                    <Button variant="outline" onClick={() => setShowReview(false)}>Edit Again</Button>
-                                    <Button onClick={submitCompletion} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                                    <Button variant="outline" onClick={() => setShowReview(false)} disabled={isSaving}>Edit Again</Button>
+                                    <Button onClick={submitCompletion} disabled={isSaving || !isReviewValid} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                                         <CheckCircle2 className="w-4 h-4 mr-2" />
-                                        Submit
+                                        {isSaving ? 'Submitting...' : 'Submit'}
                                     </Button>
                                 </div>
                             </div>
@@ -297,8 +339,8 @@ export function EmployeeTaskModal({
 
                 {!showReview && (
                     <div className="p-4 border-t flex justify-end gap-3 shrink-0 bg-muted/20">
-                        <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                        <Button onClick={() => onOpenChange(false)}>Save Progress</Button>
+                        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancel</Button>
+                        <Button onClick={() => handleSaveProgress(false)} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Progress'}</Button>
                     </div>
                 )}
             </DialogContent>

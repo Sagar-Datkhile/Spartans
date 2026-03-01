@@ -40,19 +40,6 @@ export default function Header() {
       .slice(0, 2)
   }
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'SUPERADMIN':
-        return 'bg-black'
-      case 'MANAGER':
-        return 'bg-blue-500'
-      case 'EMPLOYEE':
-        return 'bg-green-500'
-      default:
-        return 'bg-gray-500'
-    }
-  }
-
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6 shadow-sm">
       <div className="flex items-center gap-4">
@@ -73,18 +60,14 @@ export default function Header() {
 
 
         <div className="hidden items-center gap-2 sm:flex">
-          {currentUser?.role !== 'SUPERADMIN' && (
-            <span className={`rounded-full px-3 py-1 text-xs font-semibold text-white ${getRoleColor(currentUser?.role || '')}`}>
-              {currentUser?.role}
-            </span>
-          )}
+          {/* Role tags have been removed globally to match the clean SUPERADMIN aesthetic */}
         </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar>
-                <AvatarFallback className={`${getRoleColor(currentUser?.role || '')} text-white`}>
+                <AvatarFallback className="bg-black text-white">
                   {getInitials(currentUser?.name || 'User')}
                 </AvatarFallback>
               </Avatar>
