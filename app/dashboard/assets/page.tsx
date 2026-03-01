@@ -8,6 +8,7 @@ import CreateAssetDialog from '@/components/features/assets/create-asset-dialog'
 
 export default function AssetsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   return (
     <div className="space-y-6 p-6">
@@ -22,9 +23,13 @@ export default function AssetsPage() {
         </Button>
       </div>
 
-      <AssetList />
+      <AssetList refreshKey={refreshKey} />
 
-      <CreateAssetDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <CreateAssetDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSuccess={() => setRefreshKey(k => k + 1)}
+      />
     </div>
   )
 }
