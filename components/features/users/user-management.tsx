@@ -78,10 +78,14 @@ export default function UserManagement() {
         </div>
         {currentUser?.role !== 'EMPLOYEE' && (
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
-              <Upload className="mr-2 h-4 w-4" />
-              Bulk Import CSV
-            </Button>
+            {/* Bulk Import is restricted to SuperAdmin only */}
+            {currentUser?.role === 'SUPERADMIN' && (
+              <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Bulk Import CSV
+              </Button>
+            )}
+            {/* Managers and SuperAdmins can invite users */}
             <Button size="sm" onClick={() => setInviteOpen(true)}>
               <UserPlus className="mr-2 h-4 w-4" />
               Invite User
@@ -105,10 +109,6 @@ export default function UserManagement() {
           <p className="text-sm text-muted-foreground/70">
             Invite your first team member to get started.
           </p>
-          <Button size="sm" className="mt-2" onClick={() => setInviteOpen(true)}>
-            <Mail className="mr-2 h-4 w-4" />
-            Send First Invite
-          </Button>
         </div>
       )}
 
