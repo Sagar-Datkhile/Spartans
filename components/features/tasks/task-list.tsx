@@ -15,41 +15,10 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAppStore } from '@/lib/store'
 import { EmployeeTaskModal } from './employee-task-modal'
-const mockTasks = [
-  {
-    id: '1',
-    title: 'Design homepage mockup',
-    project: 'Website Redesign',
-    description: 'Create a responsive homepage mockup following the brand guidelines. Ensure all assets are properly sliced and ready for development.',
-    status: 'IN_PROGRESS',
-    priority: 'HIGH',
-    assignee: 'John Doe',
-    dueDate: '2026-03-15',
-    completed: false,
-  },
-  {
-    id: '2',
-    title: 'Setup database schema',
-    project: 'Mobile App',
-    description: 'Design and implement the initial database schema for the mobile application. Include tables for users, posts, and comments.',
-    status: 'TODO',
-    priority: 'HIGH',
-    assignee: 'Jane Smith',
-    dueDate: '2026-03-10',
-    completed: false,
-  },
-  {
-    id: '3',
-    title: 'API documentation',
-    project: 'API Integration',
-    description: 'Document the REST APIs including request/response formats and authentication requirements.',
-    status: 'COMPLETED',
-    priority: 'MEDIUM',
-    assignee: 'Bob Wilson',
-    dueDate: '2026-03-05',
-    completed: true,
-  },
-]
+import { createClient } from '@/lib/supabase/client'
+import { useEffect } from 'react'
+import { Loader2 } from 'lucide-react'
+
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -79,13 +48,76 @@ const getPriorityColor = (priority: string) => {
   }
 }
 
-export default function TaskList() {
+export default function TaskList({ refreshKey }: { refreshKey?: number }) {
   const currentUser = useAppStore((state) => state.currentUser)
-  const [selectedTask, setSelectedTask] = useState<(typeof mockTasks)[0] | null>(null)
+  const [tasks, setTasks] = useState<any[]>([])
+  const [selectedTask, setSelectedTask] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function fetchTasks() {
+      if (!currentUser?.companyId) return
+      setLoading(true)
+
+      let query = supabase
+        .from('tasks')
+        .select(`
+          *,
+          projects!inner ( id, name, company_id ),
+          users!tasks_assigned_to_fkey ( id, name )
+        `)
+        .eq('projects.company_id', currentUser.companyId)
+        .order('created_at', { ascending: false })
+
+      if (currentUser.role === 'EMPLOYEE') {
+        query = query.eq('assigned_to', currentUser.id)
+      }
+
+      const { data, error } = await query
+
+      if (!error && data) {
+        // Map data to expected format for rendering
+        const mappedTasks = data.map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          project: t.projects?.name || 'Unknown',
+          description: t.description,
+          status: t.status,
+          priority: t.priority,
+          assignee: t.users?.name || 'Unassigned',
+          dueDate: t.due_date ? new Date(t.due_date).toLocaleDateString() : 'No Date',
+          completed: t.status === 'COMPLETED'
+        }))
+        setTasks(mappedTasks)
+      }
+      setLoading(false)
+    }
+
+    fetchTasks()
+  }, [currentUser, refreshKey])
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (tasks.length === 0) {
+    return (
+      <div className="text-center py-12 border rounded-lg bg-card/50 border-dashed">
+        <h3 className="text-lg font-medium text-foreground mb-1">No tasks yet</h3>
+        <p className="text-muted-foreground text-sm">Create a task to get started.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="grid gap-4">
-      {mockTasks.map((task) => (
+      {tasks.map((task) => (
         <Card key={task.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 transition-all hover:border-gray-400 hover:shadow-md">
           <div className="flex items-center gap-4 w-full sm:w-auto">
             <div className="sm:hidden flex items-center gap-2">
@@ -139,6 +171,12 @@ export default function TaskList() {
           task={selectedTask}
           open={!!selectedTask}
           onOpenChange={(open) => !open && setSelectedTask(null)}
+          onTaskUpdated={() => {
+            // We can trigger a reload by forcing state change, but simpler is fetchTasks manually
+            // Since we extracted fetchTasks, we can just reload the page or add a re-fetch method.
+            // But for now, window.location.reload() works fine as requested.
+            window.location.reload()
+          }}
         />
       ) : (
         <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
