@@ -10,6 +10,7 @@ import { Copy, Check, Eye, EyeOff, RefreshCw, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAppStore } from '@/lib/store'
 import { useEffect, useMemo } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 interface CreateUserDialogProps {
   open: boolean
@@ -33,7 +34,7 @@ export default function CreateUserDialog({ open, onOpenChange, onSuccess }: Crea
 
   const [formData, setFormData] = useState({
     name: '',
-    emailPrefix: '',
+    email: '',
     department: '',
     role: '',
     password: '',
@@ -49,8 +50,6 @@ export default function CreateUserDialog({ open, onOpenChange, onSuccess }: Crea
     }
   }, [availableRoles, formData.role])
 
-  const corporateDomain = '@spartans.com'
-
   const generatePassword = () => {
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
     let password = ''
@@ -63,40 +62,46 @@ export default function CreateUserDialog({ open, onOpenChange, onSuccess }: Crea
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleCreate = async () => {
-    if (!formData.emailPrefix || !formData.password || !formData.name) {
+    if (!formData.email || !formData.name) {
       toast.error('Please fill in all required fields')
       return
     }
 
     setIsSubmitting(true)
-    const fullEmail = `${formData.emailPrefix.toLowerCase()}${corporateDomain}`
 
     try {
-      const res = await fetch('/api/users/invite', {
+      const { data: session } = await createClient().auth.getSession()
+      const token = session.session?.access_token || ''
+
+      const res = await fetch('/api/invite', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
-          email: fullEmail,
-          password: formData.password,
+          email: formData.email.toLowerCase().trim(),
           name: formData.name,
-          role: formData.role,
-          companyId: currentUser?.companyId,
-          departmentId: formData.department || undefined,
-          phone: formData.phone || undefined,
-          createdBy: currentUser?.id,
-          managerId: currentUser?.role === 'MANAGER' ? currentUser.id : undefined
+          role: formData.role
         })
       });
 
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to create user')
+      if (!res.ok) throw new Error(data.error || 'Failed to send invite')
 
-      setCreatedCredentials({
-        email: fullEmail,
-        password: formData.password,
-      })
-      toast.success('User created successfully')
+      toast.success('Invitation sent securely via Email')
       onSuccess?.()
+      onOpenChange(false)
+
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        department: '',
+        role: availableRoles[0]?.value || 'EMPLOYEE',
+        password: '',
+        phone: '',
+      })
     } catch (err: any) {
       toast.error(err.message)
     } finally {
@@ -104,90 +109,12 @@ export default function CreateUserDialog({ open, onOpenChange, onSuccess }: Crea
     }
   }
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text)
-    toast.success(`${label} copied to clipboard`)
-  }
-
-  const resetAndClose = () => {
-    setCreatedCredentials(null)
-    setFormData({
-      name: '',
-      emailPrefix: '',
-      department: '',
-      role: availableRoles[0]?.value || 'EMPLOYEE',
-      password: '',
-      phone: '',
-    })
-    onOpenChange(false)
-  }
-
-  const handleSendEmail = () => {
-    if (!createdCredentials) return
-
-    const subject = encodeURIComponent('Welcome to Spartans Platform - Your Account Credentials')
-    const body = encodeURIComponent(
-      `Hello,\n\nYour account has been created on the Spartans Platform.\n\n` +
-      `Login URL: ${window.location.origin}\n` +
-      `Email Address: ${createdCredentials.email}\n` +
-      `Temporary Password: ${createdCredentials.password}\n\n` +
-      `Please log in and change your password immediately for security.\n\n` +
-      `Best regards,\n` +
-      `Management Team`
-    )
-
-    window.open(`mailto:${createdCredentials.email}?subject=${subject}&body=${body}`, '_blank')
-    toast.success('Email client opened')
-  }
-
-  if (createdCredentials) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>User Credentials Created</DialogTitle>
-            <DialogDescription>
-              Share these credentials with the employee so they can access the platform.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Email Address</Label>
-              <div className="flex items-center gap-2">
-                <Input value={createdCredentials.email} readOnly className="bg-muted" />
-                <Button size="icon" variant="outline" onClick={() => copyToClipboard(createdCredentials.email, 'Email')}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Temporary Password</Label>
-              <div className="flex items-center gap-2">
-                <Input value={createdCredentials.password} readOnly className="bg-muted" />
-                <Button size="icon" variant="outline" onClick={() => copyToClipboard(createdCredentials.password, 'Password')}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-between gap-3">
-            <Button variant="outline" className="flex-1" onClick={handleSendEmail}>
-              <Mail className="mr-2 h-4 w-4" />
-              Send via Email
-            </Button>
-            <Button className="flex-1" onClick={resetAndClose}>Done</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    )
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New User</DialogTitle>
-          <DialogDescription>Add a new user and set their login credentials.</DialogDescription>
+          <DialogTitle>Send Platform Invitation</DialogTitle>
+          <DialogDescription>Add a new user and automatically email them a secure registration link.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -203,47 +130,13 @@ export default function CreateUserDialog({ open, onOpenChange, onSuccess }: Crea
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <div className="flex items-center">
-                <Input
-                  id="email"
-                  placeholder="username"
-                  className="rounded-r-none"
-                  value={formData.emailPrefix}
-                  onChange={(e) => {
-                    const value = e.target.value.split('@')[0].trim()
-                    setFormData({ ...formData, emailPrefix: value })
-                  }}
-                />
-                <div className="flex h-10 items-center rounded-r-md border border-l-0 bg-muted px-3 text-sm text-muted-foreground whitespace-nowrap">
-                  {corporateDomain}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Login Password</Label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Set initial password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                </Button>
-              </div>
-              <Button variant="outline" size="icon" onClick={generatePassword} title="Generate Password">
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+              <Input
+                id="email"
+                type="email"
+                placeholder="user@example.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
             </div>
           </div>
 
