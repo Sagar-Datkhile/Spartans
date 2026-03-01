@@ -24,7 +24,10 @@ export default function CreateUserDialog({ open, onOpenChange, onSuccess }: Crea
   // Memoize available roles so they only change when the current user's role changes
   const availableRoles = useMemo(() => {
     if (currentUser?.role === 'SUPERADMIN') {
-      return [{ value: 'MANAGER', label: 'Manager' }]
+      return [
+        { value: 'MANAGER', label: 'Manager' },
+        { value: 'EMPLOYEE', label: 'Employee' }
+      ]
     }
     if (currentUser?.role === 'MANAGER') {
       return [{ value: 'EMPLOYEE', label: 'Employee' }]
@@ -43,9 +46,10 @@ export default function CreateUserDialog({ open, onOpenChange, onSuccess }: Crea
   const [showPassword, setShowPassword] = useState(false)
   const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null)
 
-  // Update role if availableRoles changes and the current role is no longer valid
+  // Ensure role is valid when availableRoles change
   useEffect(() => {
-    if (availableRoles.length > 0 && formData.role !== availableRoles[0].value) {
+    const roleIsValid = availableRoles.some(r => r.value === formData.role)
+    if (availableRoles.length > 0 && !roleIsValid) {
       setFormData(prev => ({ ...prev, role: availableRoles[0].value }))
     }
   }, [availableRoles, formData.role])
