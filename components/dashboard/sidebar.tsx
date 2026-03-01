@@ -22,6 +22,7 @@ export default function Sidebar() {
       MessageSquare: Icons.MessageSquare,
       Users: Icons.Users,
       Settings: Icons.Settings,
+      Target: Icons.Target,
     }
     const IconComponent = iconMap[iconName]
     return IconComponent ? <IconComponent className="h-5 w-5" /> : null
