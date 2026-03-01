@@ -9,7 +9,12 @@ import CreateTaskDialog from '@/components/features/tasks/create-task-dialog'
 
 export default function TasksPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
   const { currentUser } = useAppStore()
+
+  const handleTaskCreated = () => {
+    setRefreshKey((prev) => prev + 1)
+  }
 
   return (
     <div className="space-y-6 p-6">
@@ -26,10 +31,14 @@ export default function TasksPage() {
         )}
       </div>
 
-      <TaskList />
+      <TaskList refreshKey={refreshKey} />
 
       {currentUser?.role !== 'EMPLOYEE' && (
-        <CreateTaskDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+        <CreateTaskDialog
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          onTaskCreated={handleTaskCreated}
+        />
       )}
     </div>
   )
