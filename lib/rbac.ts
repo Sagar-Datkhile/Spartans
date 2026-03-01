@@ -11,6 +11,7 @@ export type Feature =
   | 'user_management'
   | 'settings'
   | 'csv_upload'
+  | 'kpi'
 
 const rolePermissions: Record<UserRole, Feature[]> = {
   SUPERADMIN: [
@@ -24,6 +25,7 @@ const rolePermissions: Record<UserRole, Feature[]> = {
     'user_management',
     'settings',
     'csv_upload',
+    'kpi',
   ],
   MANAGER: [
     'dashboard',
@@ -34,6 +36,7 @@ const rolePermissions: Record<UserRole, Feature[]> = {
     'analytics',
     'chat',
     'csv_upload',
+    'kpi',
   ],
   EMPLOYEE: [
     'dashboard',
@@ -41,6 +44,7 @@ const rolePermissions: Record<UserRole, Feature[]> = {
     'chat',
     'analytics',
     'gantt',
+    'kpi',
   ],
 }
 
@@ -122,6 +126,13 @@ export const getRoleNavigationItems = (role: UserRole) => {
       icon: 'Users',
       href: '/dashboard/users',
       visible: ['SUPERADMIN', 'MANAGER'] as UserRole[],
+    },
+    {
+      id: 'kpi',
+      label: 'KPI Tracker',
+      icon: 'Target',
+      href: '/dashboard/kpi',
+      visible: ['SUPERADMIN', 'MANAGER', 'EMPLOYEE'] as UserRole[],
     },
     {
       id: 'settings',
