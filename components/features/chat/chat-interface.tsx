@@ -1,75 +1,250 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
-  Bold, Italic, Underline, Strikethrough, Link as LinkIcon, List, ListOrdered, Code, Quote,
-  Plus, Smile, AtSign, Video, Mic, Send, Hash, Users, Headphones, Search, MessageSquare, ClipboardList, ChevronDown
+  Bold, Italic, Strikethrough, Link as LinkIcon, List, ListOrdered, Code, Quote,
+  Plus, Smile, AtSign, Video, Mic, Send, Hash, Users, Headphones, Search,
+  MessageSquare, ClipboardList, ChevronDown, Loader2
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAppStore } from '@/lib/store'
+import { createClient } from '@/lib/supabase/client'
 
-// Mock Data for the sidebar
-const MOCK_PROJECTS = [
-  { id: 'all', name: 'all-spartans', allowedRoles: ['SUPERADMIN', 'MANAGER', 'EMPLOYEE'] },
-  { id: 'p1', name: 'website-redesign', allowedRoles: ['SUPERADMIN', 'MANAGER', 'EMPLOYEE'] },
-  { id: 'p2', name: 'mobile-app-v2', allowedRoles: ['SUPERADMIN', 'MANAGER'] },
-  { id: 'p3', name: 'executive-planning', allowedRoles: ['SUPERADMIN'] },
-]
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-const MOCK_USERS = [
-  { id: 'u1', name: 'System Admin (DA)', role: 'SUPERADMIN', isOnline: true },
-  { id: 'u2', name: 'Lokesh Khairnar', role: 'MANAGER', isOnline: true },
-  { id: 'u3', name: 'Jane Smith', role: 'MANAGER', isOnline: false },
-  { id: 'u4', name: 'John Doe', role: 'EMPLOYEE', isOnline: true },
-  { id: 'u5', name: 'Alice Johnson', role: 'EMPLOYEE', isOnline: false },
-]
+interface Project { id: string; name: string }
+interface ChatUser { id: string; name: string; role: string }
+interface Message {
+  id: string
+  channel_id: string
+  sender_id: string
+  content: string
+  created_at: string
+  sender_name?: string
+}
+interface ActiveChat { type: 'channel' | 'dm'; id: string; name: string }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Stable DM channel ID regardless of who initiated */
+function dmChannelId(uid1: string, uid2: string) {
+  return `dm:${[uid1, uid2].sort().join('_')}`
+}
+
+function projectChannelId(projectId: string) {
+  return `project:${projectId}`
+}
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ChatInterface() {
   const { currentUser } = useAppStore()
+  const supabase = createClient()
+
+  // Sidebar data
+  const [projects, setProjects] = useState<Project[]>([])
+  const [chatUsers, setChatUsers] = useState<ChatUser[]>([])
+
+  // Chat state
+  const [activeChat, setActiveChat] = useState<ActiveChat>({ type: 'channel', id: 'all', name: 'all-spartans' })
+  const [messages, setMessages] = useState<Message[]>([])
   const [message, setMessage] = useState('')
-  const [activeChat, setActiveChat] = useState<{ type: 'channel' | 'dm', id: string, name: string }>({ type: 'channel', id: 'all', name: 'all-spartans' })
+  const [loading, setLoading] = useState(false)
+  const [sending, setSending] = useState(false)
 
-  // Filter projects based on user role
-  const visibleProjects = MOCK_PROJECTS.filter(p => p.allowedRoles.includes(currentUser?.role || 'EMPLOYEE'))
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const channelRef = useRef<any>(null)    // holds the active Realtime subscription
 
-  // Filter users based on user role rules
-  const visibleUsers = MOCK_USERS.filter(u => {
-    if (u.id === currentUser?.id) return false // Hide self
-    if (currentUser?.role === 'SUPERADMIN') return true
-    if (currentUser?.role === 'MANAGER') return true
-    if (currentUser?.role === 'EMPLOYEE') return u.role !== 'SUPERADMIN'
-    return false
-  })
+  // ── 1. Fetch sidebar data when user is ready ────────────────────────────────
+  useEffect(() => {
+    if (!currentUser?.id) return
+
+    async function loadSidebar() {
+      // Load all projects (no company filter — all users are separate companies currently)
+      const { data: projs } = await supabase
+        .from('projects')
+        .select('id, name')
+        .order('name')
+
+      // Load all users except self
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, name, role')
+        .neq('id', currentUser!.id)
+
+      if (projs) setProjects(projs)
+      if (users) setChatUsers(users)
+    }
+
+    loadSidebar()
+  }, [currentUser?.id])
+
+  // ── 2. Load message history + subscribe to Realtime on channel switch ────────
+  const switchChannel = useCallback(async (chat: ActiveChat) => {
+    setActiveChat(chat)
+    setMessages([])
+    setLoading(true)
+
+    // Unsubscribe from previous channel
+    if (channelRef.current) {
+      await supabase.removeChannel(channelRef.current)
+      channelRef.current = null
+    }
+
+    const channelId =
+      chat.type === 'channel'
+        ? (chat.id === 'all' ? 'channel:all' : projectChannelId(chat.id))
+        : dmChannelId(currentUser!.id, chat.id)
+
+    // Load history via server API (bypasses RLS auth timing issues)
+    const res = await fetch(`/api/chat/messages?channel_id=${encodeURIComponent(channelId)}`)
+    if (res.ok) {
+      const data = await res.json()
+      setMessages(data.messages ?? [])
+    } else {
+      console.error('Failed to load messages:', await res.text())
+    }
+
+    setLoading(false)
+
+    // Subscribe to new messages on this channel
+    const realtimeChannel = supabase
+      .channel(`realtime:${channelId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `channel_id=eq.${channelId}` },
+        async (payload) => {
+          const newMsg = payload.new as Message
+
+          // Fetch sender name (not included in Realtime payload)
+          const { data: senderData } = await supabase
+            .from('users')
+            .select('name')
+            .eq('id', newMsg.sender_id)
+            .single()
+
+          setMessages(prev => [
+            ...prev,
+            { ...newMsg, sender_name: senderData?.name ?? 'Unknown' },
+          ])
+        }
+      )
+      .subscribe()
+
+    channelRef.current = realtimeChannel
+  }, [currentUser?.id, supabase])
+
+  // Load the default "all-spartans" channel on first mount
+  useEffect(() => {
+    if (currentUser?.id) {
+      switchChannel({ type: 'channel', id: 'all', name: 'all-spartans' })
+    }
+    return () => {
+      if (channelRef.current) supabase.removeChannel(channelRef.current)
+    }
+  }, [currentUser?.id])
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // ── 3. Send a message ───────────────────────────────────────────────────────
+  const handleSend = async () => {
+    const text = message.trim()
+    if (!text || !currentUser?.id) return
+
+    const channelId =
+      activeChat.type === 'channel'
+        ? (activeChat.id === 'all' ? 'channel:all' : projectChannelId(activeChat.id))
+        : dmChannelId(currentUser.id, activeChat.id)
+
+    // Optimistically add to UI immediately so sender sees it right away
+    const optimisticMsg: Message = {
+      id: `temp-${Date.now()}`,
+      channel_id: channelId,
+      sender_id: currentUser.id,
+      content: text,
+      created_at: new Date().toISOString(),
+      sender_name: currentUser.name,
+    }
+    setMessages(prev => [...prev, optimisticMsg])
+    setMessage('')
+
+    setSending(true)
+    const { error } = await supabase.from('messages').insert({
+      channel_id: channelId,
+      sender_id: currentUser.id,
+      content: text,
+    })
+    setSending(false)
+
+    if (error) {
+      console.error('Failed to send message:', error)
+      // Remove the optimistic message on failure
+      setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id))
+      setMessage(text) // restore text
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex h-full w-full bg-white text-gray-700 font-sans overflow-hidden border rounded-xl shadow-sm">
 
-      {/* ── Outer Sidebar (Channels & DMs) ── */}
+      {/* ── Sidebar ── */}
       <div className="w-64 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col">
-        {/* Workspace Header */}
-        <div className="h-[60px] flex items-center px-4 border-b border-gray-200 hover:bg-gray-100 cursor-pointer transition">
+        <div className="h-[60px] flex items-center px-4 border-b border-gray-200">
           <h2 className="font-bold text-gray-900 text-lg">Spartans HQ</h2>
           <ChevronDown className="w-4 h-4 ml-auto text-gray-500" />
         </div>
 
         <div className="flex flex-col flex-1 overflow-y-auto py-3 space-y-6">
 
-          {/* Projects / Channels */}
+          {/* General Channel */}
           <div>
-            <div className="flex items-center px-4 mb-1 group cursor-pointer">
+            <div className="flex items-center px-4 mb-1">
               <ChevronDown className="w-3 h-3 mr-1 text-gray-500" />
-              <span className="text-sm font-semibold text-gray-500 group-hover:text-gray-700">Projects (Channels)</span>
+              <span className="text-sm font-semibold text-gray-500">General</span>
+            </div>
+            <div
+              onClick={() => switchChannel({ type: 'channel', id: 'all', name: 'all-spartans' })}
+              className={`flex items-center px-8 py-1.5 text-[15px] cursor-pointer ${activeChat.id === 'all' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <Hash className="w-4 h-4 mr-2 opacity-70" />
+              <span>all-spartans</span>
+            </div>
+          </div>
+
+          {/* Project Channels */}
+          <div>
+            <div className="flex items-center px-4 mb-1">
+              <ChevronDown className="w-3 h-3 mr-1 text-gray-500" />
+              <span className="text-sm font-semibold text-gray-500">Projects ({projects.length})</span>
             </div>
             <div className="space-y-[1px]">
-              {visibleProjects.map(proj => (
+              {projects.length === 0 && (
+                <p className="px-8 py-2 text-xs text-gray-400">No projects yet</p>
+              )}
+              {projects.map(proj => (
                 <div
                   key={proj.id}
-                  onClick={() => setActiveChat({ type: 'channel', id: proj.id, name: proj.name })}
-                  className={`flex items-center px-8 py-1.5 text-[15px] cursor-pointer ${activeChat.id === proj.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'
-                    }`}
+                  onClick={() => switchChannel({ type: 'channel', id: proj.id, name: proj.name })}
+                  className={`flex items-center px-8 py-1.5 text-[15px] cursor-pointer ${activeChat.id === proj.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}
                 >
                   <Hash className="w-4 h-4 mr-2 opacity-70" />
-                  <span>{proj.name}</span>
+                  <span className="truncate">{proj.name}</span>
                 </div>
               ))}
             </div>
@@ -77,28 +252,25 @@ export default function ChatInterface() {
 
           {/* Direct Messages */}
           <div>
-            <div className="flex items-center px-4 mb-1 group cursor-pointer">
+            <div className="flex items-center px-4 mb-1">
               <ChevronDown className="w-3 h-3 mr-1 text-gray-500" />
-              <span className="text-sm font-semibold text-gray-500 group-hover:text-gray-700">Direct Messages</span>
+              <span className="text-sm font-semibold text-gray-500">Direct Messages</span>
             </div>
             <div className="space-y-[1px]">
-              {visibleUsers.map(user => (
+              {chatUsers.length === 0 && (
+                <p className="px-8 py-2 text-xs text-gray-400">No teammates found</p>
+              )}
+              {chatUsers.map(user => (
                 <div
                   key={user.id}
-                  onClick={() => setActiveChat({ type: 'dm', id: user.id, name: user.name })}
-                  className={`flex items-center px-8 py-1.5 text-[15px] cursor-pointer ${activeChat.id === user.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'
-                    }`}
+                  onClick={() => switchChannel({ type: 'dm', id: user.id, name: user.name })}
+                  className={`flex items-center px-8 py-1.5 text-[15px] cursor-pointer ${activeChat.id === user.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}
                 >
-                  <div className="relative mr-2">
-                    <Avatar className="w-5 h-5 rounded">
-                      <AvatarFallback className="bg-gray-200 text-[10px] text-gray-700 font-medium rounded">
-                        {user.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {user.isOnline && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
-                    )}
-                  </div>
+                  <Avatar className="w-5 h-5 rounded mr-2">
+                    <AvatarFallback className="bg-gray-200 text-[10px] text-gray-700 font-medium rounded">
+                      {user.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="truncate">{user.name}</span>
                   <span className="ml-auto text-[10px] font-medium text-gray-400 px-1 border border-gray-200 rounded">
                     {user.role === 'SUPERADMIN' ? 'SA' : user.role === 'MANAGER' ? 'MGR' : 'EMP'}
@@ -114,156 +286,164 @@ export default function ChatInterface() {
       {/* ── Main Chat Area ── */}
       <div className="flex-1 flex flex-col min-w-0 bg-white">
 
-        {/* Top Header */}
+        {/* Header */}
         <div className="h-[60px] flex items-center justify-between px-4 border-b border-gray-200 shrink-0">
           <div className="flex items-center gap-2">
-            {activeChat.type === 'channel' ? (
-              <Hash className="w-5 h-5 text-gray-500" />
-            ) : (
-              <div className="w-5 h-5 rounded bg-gray-100 flex items-center justify-center text-[10px] text-gray-700 font-bold border border-gray-200">
+            {activeChat.type === 'channel'
+              ? <Hash className="w-5 h-5 text-gray-500" />
+              : <div className="w-5 h-5 rounded bg-gray-100 flex items-center justify-center text-[10px] text-gray-700 font-bold border border-gray-200">
                 {activeChat.name.substring(0, 2).toUpperCase()}
               </div>
-            )}
+            }
             <h1 className="text-lg font-bold text-gray-900">{activeChat.name}</h1>
           </div>
-          <div className="flex items-center gap-4 text-sm font-medium text-gray-500">
+          <div className="flex items-center gap-3 text-sm text-gray-500">
             {activeChat.type === 'channel' && (
-              <>
-                <div className="flex items-center gap-1.5 hover:bg-gray-100 p-1.5 rounded cursor-pointer transition">
-                  <Users className="w-4 h-4" />
-                  <span>3</span>
-                </div>
-                <div className="flex items-center gap-1.5 hover:bg-gray-100 p-1.5 rounded cursor-pointer transition">
-                  <Headphones className="w-4 h-4" />
-                  <span>Huddle</span>
-                </div>
-              </>
+              <div className="flex items-center gap-1.5 hover:bg-gray-100 p-1.5 rounded cursor-pointer">
+                <Headphones className="w-4 h-4" />
+                <span>Huddle</span>
+              </div>
             )}
-            <div className="hover:bg-gray-100 p-1.5 rounded cursor-pointer transition text-gray-500">
+            <div className="hover:bg-gray-100 p-1.5 rounded cursor-pointer">
               <Search className="w-4 h-4" />
             </div>
           </div>
         </div>
 
-        {/* Tabs / Sub-header (Only for channels) */}
+        {/* Tabs (channels only) */}
         {activeChat.type === 'channel' && (
-          <div className="flex items-center gap-6 px-4 py-2 border-b border-gray-200 text-sm font-medium shrink-0 bg-gray-50/50">
+          <div className="flex items-center gap-6 px-4 py-2 border-b border-gray-200 text-sm font-medium bg-gray-50/50 shrink-0">
             <div className="flex items-center gap-2 text-gray-900 border-b-2 border-blue-600 pb-2 -mb-2 cursor-pointer">
               <MessageSquare className="w-4 h-4" />
               <span>Messages</span>
             </div>
             <div className="flex items-center gap-2 text-gray-500 hover:text-gray-900 cursor-pointer">
               <ClipboardList className="w-4 h-4" />
-              <span>Add canvas</span>
-            </div>
-            <div className="text-gray-500 hover:text-gray-900 cursor-pointer">
-              <Plus className="w-4 h-4" />
+              <span>Canvas</span>
             </div>
           </div>
         )}
 
-        {/* Chat Content Scrollable Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
-          {/* Welcome Message */}
-          <div className="pt-20 pb-4">
-            <div className="w-16 h-16 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center mb-4">
-              {activeChat.type === 'channel' ? <Hash className="w-8 h-8 text-gray-500" /> : <Users className="w-8 h-8 text-gray-500" />}
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {activeChat.type === 'channel' ? `Welcome to #${activeChat.name}!` : `This is your conversation with ${activeChat.name}`}
-            </h2>
-            <p className="text-gray-500">
-              {activeChat.type === 'channel'
-                ? "This is the start of the channel. You can send messages, share files, and collaborate."
-                : "You can send direct messages here securely."}
-            </p>
-          </div>
-
-          {/* Date Separator */}
-          <div className="relative flex items-center py-4">
-            <div className="flex-grow border-t border-gray-200"></div>
-            <span className="flex-shrink-0 mx-4 text-xs font-medium text-gray-500 border border-gray-200 rounded-full px-3 py-1 bg-white">
-              Today <span className="ml-1">▼</span>
-            </span>
-            <div className="flex-grow border-t border-gray-200"></div>
-          </div>
-
-          {/* Dynamic Message */}
-          <div className="flex gap-3 group">
-            <Avatar className="w-10 h-10 rounded shadow-sm border border-gray-200">
-              <AvatarImage src="" />
-              <AvatarFallback className="bg-blue-600 rounded text-white font-bold">
-                {currentUser?.name?.[0] || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="flex items-baseline gap-2">
-                <span className="font-bold text-gray-900">{currentUser?.name || 'User'}</span>
-                <span className="text-xs text-gray-500">Just now</span>
+          {/* Welcome block */}
+          {!loading && messages.length === 0 && (
+            <div className="pt-20 pb-4">
+              <div className="w-16 h-16 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center mb-4">
+                {activeChat.type === 'channel' ? <Hash className="w-8 h-8 text-gray-500" /> : <Users className="w-8 h-8 text-gray-500" />}
               </div>
-              <p className="text-gray-700 text-[15px] mt-0.5 leading-relaxed">
-                I am currently viewing the {activeChat.type === 'channel' ? 'project channel' : 'direct message'} for <span className="font-semibold text-gray-900">{activeChat.name}</span>!
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                {activeChat.type === 'channel' ? `Welcome to #${activeChat.name}!` : `Conversation with ${activeChat.name}`}
+              </h2>
+              <p className="text-gray-500">
+                {activeChat.type === 'channel'
+                  ? 'This is the start of the channel. Send a message to get the conversation going.'
+                  : 'Send a message to start a direct conversation.'}
               </p>
             </div>
-          </div>
+          )}
 
+          {/* Loading spinner */}
+          {loading && (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+            </div>
+          )}
+
+          {/* Message list */}
+          {messages.map((msg, i) => {
+            const isMe = msg.sender_id === currentUser?.id
+            const showAvatar = i === 0 || messages[i - 1].sender_id !== msg.sender_id
+            return (
+              <div key={msg.id} className="flex gap-3 group">
+                {showAvatar ? (
+                  <Avatar className="w-10 h-10 rounded shadow-sm border border-gray-200 shrink-0">
+                    <AvatarFallback className={`rounded text-white font-bold text-sm ${isMe ? 'bg-blue-600' : 'bg-gray-500'}`}>
+                      {(msg.sender_name ?? '?')[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <div className="w-10 h-10 shrink-0" />
+                )}
+                <div className="flex-1">
+                  {showAvatar && (
+                    <div className="flex items-baseline gap-2">
+                      <span className={`font-bold ${isMe ? 'text-blue-700' : 'text-gray-900'}`}>
+                        {isMe ? 'You' : msg.sender_name}
+                      </span>
+                      <span className="text-xs text-gray-400">{formatTime(msg.created_at)}</span>
+                    </div>
+                  )}
+                  <p className="text-gray-700 text-[15px] mt-0.5 leading-relaxed">{msg.content}</p>
+                </div>
+              </div>
+            )
+          })}
+
+          <div ref={bottomRef} />
         </div>
 
-        {/* ── Message Input Box ── */}
+        {/* ── Message Input ── */}
         <div className="p-4 pt-2 shrink-0">
           <div className="border border-gray-300 rounded-xl bg-white focus-within:border-gray-400 focus-within:shadow-[0_0_0_1px_rgba(156,163,175,1)] transition-all flex flex-col shadow-sm">
 
-            {/* Toolbar Top */}
+            {/* Toolbar */}
             <div className="flex items-center gap-1 p-2 bg-gray-50 rounded-t-xl border-b border-gray-200">
               <ToolbarBtn icon={<Bold className="w-4 h-4" />} />
               <ToolbarBtn icon={<Italic className="w-4 h-4" />} />
               <ToolbarBtn icon={<Strikethrough className="w-4 h-4" />} />
-              <div className="w-[1px] h-4 bg-gray-300 mx-1"></div>
+              <div className="w-[1px] h-4 bg-gray-300 mx-1" />
               <ToolbarBtn icon={<LinkIcon className="w-4 h-4" />} />
-              <div className="w-[1px] h-4 bg-gray-300 mx-1"></div>
+              <div className="w-[1px] h-4 bg-gray-300 mx-1" />
               <ToolbarBtn icon={<List className="w-4 h-4" />} />
               <ToolbarBtn icon={<ListOrdered className="w-4 h-4" />} />
-              <div className="w-[1px] h-4 bg-gray-300 mx-1"></div>
+              <div className="w-[1px] h-4 bg-gray-300 mx-1" />
               <ToolbarBtn icon={<Code className="w-4 h-4" />} />
               <ToolbarBtn icon={<Quote className="w-4 h-4" />} />
             </div>
 
-            {/* Text Area */}
+            {/* Textarea */}
             <textarea
               className="w-full bg-transparent text-gray-900 p-3 outline-none resize-none min-h-[60px] text-[15px] placeholder-gray-400"
-              placeholder={`Message ${activeChat.type === 'channel' ? '#' : ''}${activeChat.name}`}
+              placeholder={`Message ${activeChat.type === 'channel' ? '#' : ''}${activeChat.name} · Enter to send`}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={sending}
             />
 
-            {/* Toolbar Bottom */}
+            {/* Bottom toolbar */}
             <div className="flex items-center justify-between p-2 bg-gray-50 rounded-b-xl border-t border-transparent">
               <div className="flex items-center gap-1">
                 <ToolbarBtn icon={<Plus className="w-4 h-4" />} />
-                <ToolbarBtn icon={<span className="font-bold font-serif">Aa</span>} />
                 <ToolbarBtn icon={<Smile className="w-4 h-4" />} />
                 <ToolbarBtn icon={<AtSign className="w-4 h-4" />} />
-                <div className="w-[1px] h-4 bg-gray-300 mx-1"></div>
+                <div className="w-[1px] h-4 bg-gray-300 mx-1" />
                 <ToolbarBtn icon={<Video className="w-4 h-4" />} />
                 <ToolbarBtn icon={<Mic className="w-4 h-4" />} />
               </div>
 
-              <div className="flex items-center gap-1">
-                <button
-                  className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${message.trim() ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-transparent text-gray-400 hover:bg-gray-200'}`}
-                >
-                  <Send className="w-4 h-4 ml-0.5" />
-                </button>
-                <div className="w-[1px] h-4 bg-gray-300 mx-1 text-xs"></div>
-                <button className="w-6 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-200 transition">
-                  ▼
-                </button>
-              </div>
+              <button
+                onClick={handleSend}
+                disabled={!message.trim() || sending}
+                className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${message.trim() && !sending
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-transparent text-gray-400 cursor-not-allowed'
+                  }`}
+              >
+                {sending
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <Send className="w-4 h-4 ml-0.5" />
+                }
+              </button>
             </div>
           </div>
-        </div>
 
+          <p className="text-[11px] text-gray-400 mt-1.5 px-1">
+            <kbd className="bg-gray-100 border border-gray-200 px-1 rounded text-[10px]">Enter</kbd> to send · <kbd className="bg-gray-100 border border-gray-200 px-1 rounded text-[10px]">Shift+Enter</kbd> for new line
+          </p>
+        </div>
       </div>
     </div>
   )
