@@ -1,0 +1,15 @@
+﻿app/api/setup-db/route.ts(2,22): error TS7016: Could not find a declaration file for module 'pg'. 'G:/Coding Projects/GitHub Desktop/Spartans/node_modules/pg/esm/index.mjs' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/pg` if it exists or add a new declaration (.d.ts) file containing `declare module 'pg';`
+app/api/setup-invites/route.ts(2,22): error TS7016: Could not find a declaration file for module 'pg'. 'G:/Coding Projects/GitHub Desktop/Spartans/node_modules/pg/esm/index.mjs' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/pg` if it exists or add a new declaration (.d.ts) file containing `declare module 'pg';`
+components/ui/sidebar.tsx(8,29): error TS2307: Cannot find module '@/hooks/use-mobile' or its corresponding type declarations.
+components/ui/toaster.tsx(3,26): error TS2307: Cannot find module '@/hooks/use-toast' or its corresponding type declarations.
+components/ui/toaster.tsx(18,31): error TS7031: Binding element 'id' implicitly has an 'any' type.
+components/ui/toaster.tsx(18,35): error TS7031: Binding element 'title' implicitly has an 'any' type.
+components/ui/toaster.tsx(18,42): error TS7031: Binding element 'description' implicitly has an 'any' type.
+components/ui/toaster.tsx(18,55): error TS7031: Binding element 'action' implicitly has an 'any' type.
+lib/hooks/useAssets.ts(2,36): error TS2307: Cannot find module '@/lib/services/firestore' or its corresponding type declarations.
+lib/hooks/useProjects.ts(2,38): error TS2307: Cannot find module '@/lib/services/firestore' or its corresponding type declarations.
+lib/hooks/useTasks.ts(2,55): error TS2307: Cannot find module '@/lib/services/firestore' or its corresponding type declarations.
+lib/models.ts(1,27): error TS2307: Cannot find module 'firebase/firestore' or its corresponding type declarations.
+lib/services/mail.ts(1,24): error TS2307: Cannot find module 'nodemailer' or its corresponding type declarations.
