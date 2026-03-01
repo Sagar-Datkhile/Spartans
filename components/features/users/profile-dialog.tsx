@@ -89,7 +89,7 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
                         </Avatar>
                     </div>
                     {currentUser?.role && (
-                        <Badge className={`absolute top-4 right-4 font-semibold shadow-sm border border-white/20 text-white ${currentUser.role === 'SUPERADMIN' ? 'bg-black hover:bg-black/80' :
+                        <Badge className={`absolute top-4 right-14 font-semibold shadow-sm border border-white/20 text-white ${currentUser.role === 'SUPERADMIN' ? 'bg-black hover:bg-black/80' :
                             currentUser.role === 'MANAGER' ? 'bg-blue-600 hover:bg-blue-700' :
                                 'bg-emerald-600 hover:bg-emerald-700'
                             }`}>

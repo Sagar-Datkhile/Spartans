@@ -44,7 +44,7 @@ export default function ProjectDetailsDialog({ project, open, onOpenChange, onEd
                                 </div>
                                 <DialogTitle className="text-2xl">{project.name}</DialogTitle>
                             </div>
-                            <Badge className={getStatusColor(project.status)}>
+                            <Badge className={`${getStatusColor(project.status)} mr-6`}>
                                 {project.status.replace('_', ' ')}
                             </Badge>
                         </div>
