@@ -10,13 +10,26 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
     // In production, these should be properly set in .env.local
     // Using Ethereal (https://ethereal.email/) for development/testing if real credentials aren't provided
 
+    let host = process.env.SMTP_HOST;
+    let port = Number(process.env.SMTP_PORT);
+    let user = process.env.SMTP_USER;
+    let pass = process.env.SMTP_PASS;
+
+    if (!host) {
+        const testAccount = await nodemailer.createTestAccount();
+        host = testAccount.smtp.host;
+        port = testAccount.smtp.port;
+        user = testAccount.user;
+        pass = testAccount.pass;
+    }
+
     const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-        port: Number(process.env.SMTP_PORT) || 465,
-        secure: Number(process.env.SMTP_PORT) === 465, // true for 465, false for other ports
+        host,
+        port,
+        secure: port === 465, // true for 465, false for other ports
         auth: {
-            user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
-            pass: process.env.SMTP_PASS || 'ethereal.pass',
+            user,
+            pass,
         },
     });
 
